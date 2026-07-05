@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { autenticar } from '../services/mockAuth';
+import { getTracer } from '../services/telemetry';
 import './Login.css';
 
 export default function Login({ aoLogar }) {
@@ -8,8 +9,22 @@ export default function Login({ aoLogar }) {
 
   const lidarComEnvioDoFormulario = (evento) => {
     evento.preventDefault();
-    const dadosDoUsuario = autenticar(nomeUsuario, perfilDeAcesso);
-    aoLogar(dadosDoUsuario);
+    const tracer = getTracer();
+    tracer.startActiveSpan('user_login_click', (span) => {
+      span.setAttribute('user.username', nomeUsuario);
+      span.setAttribute('user.role', perfilDeAcesso);
+      
+      try {
+        const dadosDoUsuario = autenticar(nomeUsuario, perfilDeAcesso);
+        aoLogar(dadosDoUsuario);
+        span.addEvent('autenticacao_sucesso');
+      } catch (erro) {
+        span.recordException(erro);
+        span.setStatus({ code: 2, message: erro.message });
+      } finally {
+        span.end();
+      }
+    });
   };
 
   return (
