@@ -2,31 +2,45 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import Login from './Login';
+import { doLogin } from '../services/keycloak';
+
+// Mock do serviço de login do Keycloak e da telemetria
+vi.mock('../services/keycloak', () => ({
+  doLogin: vi.fn(),
+}));
+
+vi.mock('../services/telemetry', () => ({
+  getTracer: () => ({
+    startActiveSpan: (nome, callback) => {
+      const span = {
+        setAttribute: vi.fn(),
+        setStatus: vi.fn(),
+        recordException: vi.fn(),
+        end: vi.fn(),
+      };
+      callback(span);
+    }
+  })
+}));
 
 describe('Login Component', () => {
   it('deve renderizar o formulário de login corretamente', () => {
-    render(<Login aoLogar={() => {}} />);
+    render(<Login />);
     
-    expect(screen.getByText('Acesso ao Sistema')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Ex: dr.joao')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Autenticar/i })).toBeInTheDocument();
+    expect(screen.getByText('Sistema Clínico')).toBeInTheDocument();
+    expect(screen.getByText('Acesso restrito via provedor de identidade.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Entrar via Keycloak/i })).toBeInTheDocument();
   });
 
-  it('deve submeter o formulário e chamar aoLogar com os dados corretos', () => {
-    const funcaoSimuladaDeLogin = vi.fn();
-    render(<Login aoLogar={funcaoSimuladaDeLogin} />);
+  it('deve chamar doLogin do Keycloak ao clicar no botão', () => {
+    render(<Login />);
     
-    const campoDeUsuario = screen.getByPlaceholderText('Ex: dr.joao');
-    const selecaoDePerfil = screen.getByRole('combobox');
-    const botaoDeEntrar = screen.getByRole('button', { name: /Autenticar/i });
+    const botaoDeEntrar = screen.getByRole('button', { name: /Entrar via Keycloak/i });
 
-    //simula a interacao do usuario digitando as coisas
-    fireEvent.change(campoDeUsuario, { target: { value: 'medico.teste' } });
-    fireEvent.change(selecaoDePerfil, { target: { value: 'MEDICO' } });
+    //simula o clique no botao
     fireEvent.click(botaoDeEntrar);
 
-    //verifica se a funcao foi chamada corretamente com o payload esperado
-    expect(funcaoSimuladaDeLogin).toHaveBeenCalledTimes(1);
-    expect(funcaoSimuladaDeLogin).toHaveBeenCalledWith({ username: 'medico.teste', role: 'MEDICO' });
+    //verifica se a funcao de login do Keycloak foi chamada
+    expect(doLogin).toHaveBeenCalledTimes(1);
   });
 });

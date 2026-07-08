@@ -1,26 +1,26 @@
 import React, { useState } from 'react';
-import { autenticar } from '../services/mockAuth';
 import { getTracer } from '../services/telemetry';
+import { doLogin } from '../services/keycloak';
 import './Login.css';
 
-export default function Login({ aoLogar }) {
-  const [nomeUsuario, setNomeUsuario] = useState('');
-  const [perfilDeAcesso, setPerfilDeAcesso] = useState('MEDICO');
+export default function Login() {
+  const [erro, setErro] = useState('');
 
-  const lidarComEnvioDoFormulario = (evento) => {
-    evento.preventDefault();
+  const lidarComEnvio = (e) => {
+    e.preventDefault();
+    setErro('');
+
     const tracer = getTracer();
     tracer.startActiveSpan('user_login_click', (span) => {
-      span.setAttribute('user.username', nomeUsuario);
-      span.setAttribute('user.role', perfilDeAcesso);
+      span.setAttribute('event.action', 'login_button_clicked');
       
       try {
-        const dadosDoUsuario = autenticar(nomeUsuario, perfilDeAcesso);
-        aoLogar(dadosDoUsuario);
-        span.addEvent('autenticacao_sucesso');
+        doLogin();
+        span.setStatus({ code: 1 }); // 1 = OK no OpenTelemetry
       } catch (erro) {
         span.recordException(erro);
-        span.setStatus({ code: 2, message: erro.message });
+        span.setStatus({ code: 2, message: erro.message }); // 2 = ERROR no OpenTelemetry
+        setErro('Falha ao redirecionar para o Keycloak');
       } finally {
         span.end();
       }
@@ -32,39 +32,16 @@ export default function Login({ aoLogar }) {
       <div className="login-card glass-panel">
         <div className="login-header">
           <span className="login-icon">⚕️</span>
-          <h1>Acesso ao Sistema</h1>
-          <p>Insira suas credenciais para acessar os dados clínicos.</p>
+          <h1>Sistema Clínico</h1>
+          <p>Acesso restrito via provedor de identidade.</p>
         </div>
-
-        <form onSubmit={lidarComEnvioDoFormulario} className="login-form">
-          <div className="form-group">
-            <label htmlFor="username">Usuário</label>
-            <input
-              id="username"
-              type="text"
-              value={nomeUsuario}
-              onChange={(e) => setNomeUsuario(e.target.value)}
-              placeholder="Ex: dr.joao"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="role">Perfil de Acesso</label>
-            <div className="custom-select-wrapper">
-              <select
-                id="role"
-                value={perfilDeAcesso}
-                onChange={(e) => setPerfilDeAcesso(e.target.value)}
-              >
-                <option value="MEDICO">Médico Responsável</option>
-                <option value="ESTAGIARIO">Estagiário</option>
-                <option value="PESQUISADOR">Pesquisador</option>
-              </select>
-            </div>
-          </div>
-
-          <button type="submit" className="btn w-100">Autenticar</button>
+        
+        {erro && <div className="error-message" role="alert" style={{ color: 'red', marginBottom: '16px', textAlign: 'center' }}>{erro}</div>}
+        
+        <form onSubmit={lidarComEnvio} className="login-form">
+          <button type="submit" className="btn w-100">
+            Entrar via Keycloak
+          </button>
         </form>
       </div>
     </div>
