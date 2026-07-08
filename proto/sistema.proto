@@ -1,0 +1,192 @@
+syntax = "proto3";
+
+package clinical_system;
+
+option go_package = "./proto";
+option java_multiple_files = true;
+option java_package = "br.unb.gama.pspd.clinical";
+
+// verifica permissões e regras de escopo
+service AuthorizationService {
+  rpc AuthorizeQuery (AuthRequest) returns (AuthResponse);
+}
+
+// consultas SQL puras ao PostgreSQL
+service PatientDataService {
+  rpc FetchPatients (PatientQueryRequest) returns (PatientQueryResponse);
+  rpc FetchEncounters (EncounterQueryRequest) returns (EncounterQueryResponse);
+  rpc FetchClinicalEvents (EventQueryRequest) returns (EventQueryResponse);
+  rpc FetchCohortData (CohortQueryRequest) returns (CohortQueryResponse);
+}
+
+// anonimização, agregação e mapeamento FHIR
+service DataTransformService {
+  rpc TransformToFHIR (TransformRequest) returns (TransformResponse);
+  rpc GetCohortStatistics (StatisticsRequest) returns (StatisticsResponse);
+}
+
+message AuthRequest {
+  string token_jwt = 1;
+  string query_type = 2;   //ex: "ResumoClinico", "HistoricoClinico", "ResumoCoorte"
+  string target_id = 3;    //ID do paciente solicitado ou ID do projeto de pesquisa
+}
+
+message AuthResponse {
+  string status = 1;         // "ALLOW" ou "DENY"
+  string access_level = 2;     // "FULL", "PARTIAL", "ANONYMIZED", "AGGREGATED"
+  string username = 3;
+  string role = 4;           // "MEDICO", "ESTAGIARIO", "PESQUISADOR"
+}
+
+message PatientQueryRequest {
+  string username = 1;
+  string role = 2;
+  string patient_id = 3;     // opcional (se vazio, busca por vínculo)
+}
+
+message DBPatient {
+  string id_paciente = 1;
+  string nome = 2;
+  string data_nascimento = 3;
+  string genero = 4;
+  string cidade = 5;
+  string estado = 6;
+  string cpf = 7;
+  string cns = 8;
+}
+
+message PatientQueryResponse {
+  repeated DBPatient patients = 1;
+}
+
+message EncounterQueryRequest {
+  string patient_id = 1;
+}
+
+message DBEncounter {
+  string id_atendimento = 1;
+  string id_paciente = 2;
+  string data_inicio = 3;
+  string data_fim = 4;
+  string tipo_atendimento = 5;
+  string setor_departamento = 6;
+}
+
+message EncounterQueryResponse {
+  repeated DBEncounter encounters = 1;
+}
+
+message EventQueryRequest {
+  string patient_id = 1;
+}
+
+message DBClinicalEvent {
+  string id_evento = 1;
+  string id_paciente = 2;
+  string id_atendimento = 3;
+  string tipo_evento = 4;       // "Condição", "Observação", "Medicação"
+  string codigo_tipo_evento = 5;  // Ex: "Diabetes", "Hipertensão", "Glicemia"
+  string descricao_evento = 6;
+  string data_evento = 7;
+  string valor = 8;
+  string unidade_valor = 9;
+}
+
+message EventQueryResponse {
+  repeated DBClinicalEvent events = 1;
+}
+
+message CohortQueryRequest {
+  string project_id = 1;
+}
+
+message CohortQueryResponse {
+  string condition_code = 1;
+  repeated DBPatient patients = 2;
+  repeated DBClinicalEvent relevant_events = 3;
+}
+
+message TransformRequest {
+  string access_level = 1;      // "FULL", "PARTIAL" ou "ANONYMIZED"
+  repeated DBPatient raw_patients = 2;
+  repeated DBEncounter raw_encounters = 3;
+  repeated DBClinicalEvent raw_events = 4;
+}
+
+message TransformResponse {
+  repeated FHIRPatient patients = 1;
+  repeated FHIREncounter encounters = 2;
+  repeated FHIRCondition conditions = 3;
+  repeated FHIRObservation observations = 4;
+  repeated FHIRMedicationRequest medications = 5;
+}
+
+//mapeamento estruturado dos recursos FHIR solicitados
+message FHIRPatient {
+  string resource_type = 1;        // Sempre "Patient"
+  string id = 2;                   // ID real ou Hash/Pseudo-ID dependendo do nível
+  string name = 3;                 // Nome completo ou Iniciais (ex: "J. S.")
+  string birth_date = 4;           // Data completa, apenas Ano, ou Faixa Etária (ex: "56 anos")
+  string gender = 5;
+  string city = 6;                 // Omitido se for ANONYMIZED
+  string state = 7;
+  string cpf = 8;                  // Omitido se for PARTIAL ou ANONYMIZED
+  string cns = 9;                  // Omitido se for PARTIAL ou ANONYMIZED
+}
+
+message FHIREncounter {
+  string resource_type = 1;  
+  string id = 2;
+  string subject_reference = 3;    //referência do Paciente (ex: "Patient/hash001")
+  string start = 4;
+  string end = 5;
+  string type = 6;                 // tipo de atendimento
+  string service_provider = 7;     // Setor/Departamento
+}
+
+message FHIRCondition {
+  string resource_type = 1;        //condicao
+  string id = 2;
+  string subject_reference = 3;
+  string code = 4;                 //código da comorbidade
+  string recorded_date = 5;
+}
+
+message FHIRObservation {
+  string resource_type = 1;    // "Observation"
+  string id = 2;
+  string subject_reference = 3;
+  string code = 4;                 // Ex: "Glicemia", "HbA1c", "IMC"
+  string value = 5;             // Valor do exame
+  string unit = 6;             //unidade de medida
+  string effective_date = 7;
+}
+
+message FHIRMedicationRequest {
+  string resource_type = 1;        // "MedicationRequest"
+  string id = 2;
+  string subject_reference = 3;
+  string medication_code = 4;      // Medicamento prescrito
+  string authored_on = 5;
+}
+
+message StatisticsRequest {
+  string project_id = 1;
+}
+
+// Cards e tabela da tela do Pesquisador
+message StatisticsResponse {
+  int32 total_patients = 1;         // Card 1: Total de Pacientes na Coorte (ex: 14000)
+  string gender_distribution = 2;   // Card 2: Distribuição por Sexo (ex: "70% M | 30% H")
+  string average_age = 3;           // Card 3: Média de Idade (ex: "61.5 anos")
+  repeated AnonymizedExam sample_exams = 4; // Tabela: Amostra de Exames Anonimizados
+}
+
+message AnonymizedExam {
+  string pseudo_id = 1; 
+  int32 age = 2;               
+  string gender = 3;                
+  string hba1c = 4; 
+  string glicemia = 5;    
+  string imc = 6;                 
+}
