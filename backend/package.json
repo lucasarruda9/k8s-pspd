@@ -1,0 +1,25 @@
+{
+  "name": "pspd-backend-microsservicos",
+  "version": "1.0.0",
+  "description": "Microsserviços gRPC (Authorization, PatientData, DataTransform) do sistema clínico PSPD - HL7/FHIR",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start:auth": "node src/services/authorization/server.js",
+    "start:patient": "node src/services/patientData/server.js",
+    "start:transform": "node src/services/dataTransform/server.js",
+    "start:all": "node src/start-all.js",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "test:watch": "npm test -- --watch"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.10.9",
+    "@grpc/proto-loader": "^0.7.13",
+    "prom-client": "^15.1.3"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
