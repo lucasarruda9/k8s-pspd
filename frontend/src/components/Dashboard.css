@@ -1,0 +1,162 @@
+.dashboard-layout {
+  min-height: 100vh;
+  background-color: var(--alice-blue);
+  /* Animação suave na entrada inteira */
+  animation: fadeIn 0.8s ease-out;
+}
+
+.dashboard-header {
+  background-color: var(--midnight-green);
+  color: var(--white);
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--shadow-2);
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-logo h1 {
+  color: var(--white);
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.user-info strong {
+  font-size: 1rem;
+}
+
+.badge {
+  background-color: var(--verdigris);
+  color: var(--white);
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: var(--radius-4);
+  font-weight: 700;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-logout {
+  background: transparent;
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 8px 16px;
+  border-radius: var(--radius-6);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-2);
+}
+
+.btn-logout:hover {
+  background-color: var(--white);
+  color: var(--midnight-green);
+}
+
+.dashboard-content {
+  padding: 40px 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.view-container h2 {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.view-description {
+  color: var(--independence);
+  margin-bottom: 32px;
+  font-size: 1.1rem;
+}
+
+/* Tabelas Doclab Style */
+.data-table-container {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.data-table th {
+  background-color: var(--alice-blue);
+  color: var(--midnight-green);
+  font-weight: 700;
+  padding: 16px;
+  border-bottom: 2px solid var(--gainsboro);
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.data-table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--gainsboro);
+  color: var(--rich-black);
+  vertical-align: middle;
+}
+
+.data-table tbody tr {
+  transition: var(--transition-2);
+}
+
+.data-table tbody tr:hover {
+  background-color: var(--alice-blue);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Grids do Pesquisador */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.stat-card {
+  text-align: center;
+  transition: var(--transition-2);
+  border-bottom: 4px solid var(--verdigris);
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-2);
+}
+
+.stat-card h3 {
+  font-size: 1.1rem;
+  color: var(--independence);
+  margin-bottom: 16px;
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--midnight-green);
+  font-family: var(--ff-title);
+}

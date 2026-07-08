@@ -1,0 +1,45 @@
+#logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+#dependências
+node_modules/
+
+#outputs de build e Testes
+dist
+dist-ssr
+coverage/
+playwright-report/
+test-results/
+
+#Testes E2E (Uso remoto e cuidadoso pela questão de dados sensíveis)
+frontend/tests/e2e/
+frontend/playwright.config.js
+
+#variáveis de ambiente e Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.local
+*.pem
+
+#IDEs e Editores
+.idea/
+.vscode/
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+#metadados do S.O.
+.DS_Store
+Thumbs.db

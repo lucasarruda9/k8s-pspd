@@ -1,0 +1,107 @@
+:root {
+  /* Cores */
+  --verdigris: hsl(182, 100%, 35%);
+  --midnight-green: hsl(186, 100%, 19%);
+  --rich-black: hsl(222, 44%, 8%);
+  --alice-blue: hsl(187, 25%, 94%);
+  --gainsboro: hsl(0, 0%, 87%);
+  --independence: hsl(236, 14%, 39%);
+  --eerie-black: hsl(0, 0%, 13%);
+  --white: hsl(0, 0%, 100%);
+  --middle-blue-green_40: hsla(174, 64%, 71%, 0.4);
+
+  --ff-title: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Arial Black", sans-serif;
+  --ff-body: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  
+  /* Sombreamentos e Bordas */
+  --shadow-1: 0px 2px 20px hsla(209, 36%, 72%, 0.2);
+  --shadow-2: 0 4px 16px hsla(0, 0%, 0%, 0.06);
+  --radius-6: 6px;
+  --radius-12: 12px;
+
+  /* Transicoes */
+  --transition-2: 0.5s ease;
+}
+
+/* Reset & Base */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--ff-body);
+  background-color: var(--alice-blue);
+  color: var(--independence);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--ff-title);
+  color: var(--midnight-green);
+  font-weight: 700;
+}
+
+/* Botoes */
+.btn {
+  background-color: var(--verdigris);
+  color: var(--white);
+  font-weight: 700;
+  font-family: var(--ff-title);
+  padding: 12px 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-6);
+  overflow: hidden;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+  text-decoration: none;
+}
+
+.btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: var(--eerie-black);
+  border-radius: var(--radius-6);
+  transition: var(--transition-2);
+  z-index: -1;
+}
+
+.btn:hover::before,
+.btn:focus-visible::before {
+  transform: translateX(100%);
+}
+
+/* Botoes Secundarios */
+.btn-secondary {
+  background-color: var(--white);
+  color: var(--verdigris);
+  border: 1px solid var(--verdigris);
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-6);
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-secondary:hover {
+  background-color: var(--verdigris);
+  color: var(--white);
+}
+
+.glass-panel {
+  background: var(--white);
+  border-radius: var(--radius-12);
+  box-shadow: var(--shadow-1);
+  padding: 24px;
+}
