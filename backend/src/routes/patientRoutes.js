@@ -1,14 +1,48 @@
 export default async function (fastify, opts) {
-  // Lista todos para a tabela principal
-  fastify.get('/', async (req, reply) => {
-    // Chamar gRPC: client.ListPatients({})
-    return [{ id: 1, nome: "Paciente A", status: "Estável" }];
+  
+  fastify.get('/', { onRequest: [fastify.authenticate] }, async (req, reply) => {
+    const { username, role } = req.user; 
+    
+    const response = await fastify.grpcClient.FetchPatients({ 
+      username, 
+      role 
+    });
+    return response.patients;
   });
 
-  // Detalhe de um paciente específico (ao clicar na linha)
-  fastify.get('/:id', async (req, reply) => {
+  fastify.get('/:id', { onRequest: [fastify.authenticate] }, async (req, reply) => {
     const { id } = req.params;
-    // Chamar gRPC: client.GetPatientById({ id })
-    return { id, nome: "Paciente A", historico: "..." };
+
+    const response = await fastify.grpcClient.FetchClinicalEvents({ 
+      patient_id: id 
+    });
+    return response.events;
+  });
+
+  fastify.get('/:id/encounters', { onRequest: [fastify.authenticate] }, async (req, reply) => {
+    const { id } = req.params;
+    
+    const response = await fastify.grpcClient.FetchEncounters({ 
+      patient_id: id 
+    });
+    return response.encounters;
+  });
+
+  fastify.get('/cohorts/:projectId', { onRequest: [fastify.authenticate] }, async (req, reply) => {
+    const { projectId } = req.params;
+    
+    const response = await fastify.grpcClient.FetchCohortData({ 
+      project_id: projectId 
+    });
+    return response;
+  });
+
+  fastify.get('/statistics/:projectId', { onRequest: [fastify.authenticate] }, async (req, reply) => {
+    const { projectId } = req.params;
+
+    const response = await fastify.grpcClient.GetCohortStatistics({ 
+      project_id: projectId 
+    });
+    return response; 
   });
 }
