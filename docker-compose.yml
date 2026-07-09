@@ -9,3 +9,15 @@ services:
       - "80:5173"
     environment:
       - NODE_ENV=development
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.5
+    command: start-dev --import-realm
+    environment:
+      KC_DB: dev-file
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
