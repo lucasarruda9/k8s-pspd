@@ -43,6 +43,3 @@ frontend/playwright.config.js
 #metadados do S.O.
 .DS_Store
 Thumbs.db
-
-# Ambiente de Dev Keycloak (Nao subir pro cluster)
-keycloak/
