@@ -12,6 +12,14 @@ data:
         url: http://prometheus:9090
         access: proxy
         isDefault: true
+      - name: Loki
+        type: loki
+        url: http://loki:3100
+        access: proxy
+      - name: Jaeger
+        type: jaeger
+        url: http://jaeger:16686
+        access: proxy
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -90,6 +98,69 @@ data:
       ]
     }
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-auditoria
+  namespace: pspd
+data:
+  pspd-auditoria.json: |
+    {
+      "title": "PSPD - Auditoria e negocio",
+      "uid": "pspd-auditoria",
+      "schemaVersion": 38,
+      "panels": [
+        {
+          "title": "Logins por minuto (Keycloak)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "targets": [
+            {
+              "datasource": "Loki",
+              "expr": "sum(count_over_time({app=\"keycloak\", namespace=\"pspd\"} |= \"LOGIN\"[1m]))",
+              "legendFormat": "logins/min"
+            }
+          ]
+        },
+        {
+          "title": "Erros de autenticacao (401/403)",
+          "type": "stat",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "targets": [
+            {
+              "expr": "sum(increase(http_requests_total{namespace=\"pspd\", status=~\"401|403\"}[5m]))",
+              "legendFormat": "erros de auth"
+            }
+          ]
+        },
+        {
+          "title": "Traces de request (Jaeger)",
+          "type": "traces",
+          "datasource": "Jaeger",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+          "targets": [
+            {
+              "datasource": "Jaeger",
+              "queryType": "search",
+              "service": "api-gateway"
+            }
+          ]
+        },
+        {
+          "title": "Logs recentes dos pods",
+          "type": "logs",
+          "datasource": "Loki",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+          "targets": [
+            {
+              "datasource": "Loki",
+              "expr": "{namespace=\"pspd\"}"
+            }
+          ]
+        }
+      ]
+    }
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -124,6 +195,8 @@ spec:
               mountPath: /etc/grafana/provisioning/dashboards
             - name: dashboards-content
               mountPath: /var/lib/grafana/dashboards
+            - name: dashboards-auditoria
+              mountPath: /var/lib/grafana/dashboards/auditoria
           resources:
             requests:
               cpu: "100m"
@@ -141,6 +214,9 @@ spec:
         - name: dashboards-content
           configMap:
             name: grafana-dashboard-pspd
+        - name: dashboards-auditoria
+          configMap:
+            name: grafana-dashboard-auditoria
 ---
 apiVersion: v1
 kind: Service
