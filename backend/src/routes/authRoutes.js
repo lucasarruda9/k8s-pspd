@@ -1,6 +1,15 @@
 export default async function (fastify, opts) {
-  fastify.post('/login', async (req, reply) => {
-    // Aqui você chamará o gRPC de Autenticação (AuthService)
-    return { token: "fake-jwt-token", user: "Dr. João" };
+  
+  fastify.post('/authorize', { onRequest: [fastify.authenticate] }, async (req, reply) => {
+    const { query_type, target_id } = req.body;
+    const { token } = req;
+
+    const authDecision = await fastify.grpcClient.AuthorizeQuery({
+      token_jwt: token,
+      query_type,
+      target_id
+    });
+
+    return authDecision;
   });
 }
