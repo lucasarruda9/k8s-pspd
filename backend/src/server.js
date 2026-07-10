@@ -1,42 +1,55 @@
 import Fastify from 'fastify';
+import jwt from '@fastify/jwt';
+import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+
 import authRoutes from './routes/authRoutes.js';
 import patientRoutes from './routes/patientRoutes.js';
 import transformRoutes from './routes/transformRoutes.js';
 
 const fastify = Fastify({ logger: true });
 
-//configuração do Swagger
+await fastify.register(cors);
+
+await fastify.register(jwt, {
+  secret: 'chave' // chave publica do keycloag
+});
+
+fastify.decorate("authenticate", async (request, reply) => {
+  try {
+    await request.jwtVerify();
+  } catch (err) {
+    reply.status(401).send({ message: "Token inválido ou ausente" });
+  }
+});
+
+// Swagger 
 await fastify.register(swagger, {
-  swagger: {
+  openapi: {
     info: {
       title: 'PSPD API - Gateway de Microsserviços',
       description: 'API centralizadora para sistema clínico FHIR',
       version: '1.0.0'
-    },
-    host: 'localhost:3000',
-    schemes: ['http'],
-    consumes: ['application/json'],
-    produces: ['application/json']
+    }
   }
 });
 
-//Swagger
 await fastify.register(swaggerUi, {
-  routePrefix: '/docs', // Acesse: http://localhost:3000/docs
-  uiConfig: { docExpansion: 'full' }
+  routePrefix: '/docs',
+  uiConfig: { docExpansion: 'list' }
 });
 
-//rotas
-fastify.register(authRoutes, { prefix: '/api/auth' });
-fastify.register(patientRoutes, { prefix: '/api/patients' });
-fastify.register(transformRoutes, { prefix: '/api/transform' });
+
+await fastify.register(authRoutes, { prefix: '/api/auth' });
+await fastify.register(patientRoutes, { prefix: '/api/patients' });
+await fastify.register(transformRoutes, { prefix: '/api/transform' });
 
 const start = async () => {
   try {
     await fastify.listen({ port: 3000 });
-    console.log('Gateway rodando. Documentação em http://localhost:3000/docs');
+    fastify.log.info('Gateway rodando em http://localhost:3000');
+    fastify.log.info('Documentação em http://localhost:3000/docs');
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
