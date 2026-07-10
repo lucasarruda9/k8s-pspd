@@ -7,7 +7,7 @@ import transformRoutes from './routes/transformRoutes.js';
 
 const fastify = Fastify({ logger: true });
 
-// 1. Configuração do Swagger
+//configuração do Swagger
 await fastify.register(swagger, {
   swagger: {
     info: {
@@ -22,13 +22,13 @@ await fastify.register(swagger, {
   }
 });
 
-// 2. Configuração da UI (Interface visual)
+//Swagger
 await fastify.register(swaggerUi, {
   routePrefix: '/docs', // Acesse: http://localhost:3000/docs
   uiConfig: { docExpansion: 'full' }
 });
 
-// 3. Registro das rotas (mantive igual)
+//rotas
 fastify.register(authRoutes, { prefix: '/api/auth' });
 fastify.register(patientRoutes, { prefix: '/api/patients' });
 fastify.register(transformRoutes, { prefix: '/api/transform' });
