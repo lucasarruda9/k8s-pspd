@@ -43,3 +43,10 @@ frontend/playwright.config.js
 #metadados do S.O.
 .DS_Store
 Thumbs.db
+
+#credenciais K8s
+kubeconfig*.yaml
+.kube/
+
+# Ambiente de Dev Keycloak (Nao subir pro cluster)
+keycloak/

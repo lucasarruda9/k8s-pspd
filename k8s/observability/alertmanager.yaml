@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: grupo-04
+data:
+  alertmanager.yaml: |
+    global:
+      resolve_timeout: 5m
+    route:
+      group_by: ['alertname', 'namespace']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 1h
+      receiver: 'default'
+    receivers:
+      - name: 'default'
+        webhook_configs:
+          - url: 'http://localhost:9001/alerts'
+            send_resolved: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-alert-rules
+  namespace: grupo-04
+data:
+  pspd-rules.yaml: |
+    groups:
+      - name: pspd-infra
+        rules:
+          - alert: HighCpuUsage
+            expr: sum(rate(container_cpu_usage_seconds_total{namespace="pspd", container!=""}[1m])) by (pod) > 0.8
+            for: 2m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Pod {{ $labels.pod }} com alto uso de CPU"
+              description: "Uso acima de 80% por mais de 2 minutos."
+
+          - alert: HighErrorRate
+            expr: sum(rate(http_requests_total{namespace="pspd", status=~"5.."}[1m])) / sum(rate(http_requests_total{namespace="pspd"}[1m])) > 0.05
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Taxa de erros HTTP acima de 5%"
+              description: "Namespace pspd com taxa de erro {{ $value | humanizePercentage }}."
+
+          - alert: PodNotReady
+            expr: kube_pod_status_ready{namespace="pspd", condition="false"} == 1
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Pod {{ $labels.pod }} nao esta pronto"
+              description: "Pod em estado nao-pronto ha mais de 5 minutos."
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: grupo-04
+  labels:
+    app: alertmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.27.0
+          args:
+            - "--config.file=/etc/alertmanager/alertmanager.yaml"
+            - "--storage.path=/alertmanager"
+          ports:
+            - containerPort: 9093
+          volumeMounts:
+            - name: alertmanager-config
+              mountPath: /etc/alertmanager
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+      volumes:
+        - name: alertmanager-config
+          configMap:
+            name: alertmanager-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: grupo-04
+spec:
+  selector:
+    app: alertmanager
+  ports:
+    - port: 9093
+      targetPort: 9093
+  type: LoadBalancer

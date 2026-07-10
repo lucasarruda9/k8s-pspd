@@ -1,0 +1,14 @@
+export default async function (fastify, opts) {
+  
+  fastify.post('/authorize', { onRequest: [fastify.authenticate] }, async (req, reply) => {
+    const { query_type, target_id } = req.body;
+
+    const authDecision = await fastify.grpcClient.AuthorizeQuery({
+      token_jwt: token,
+      query_type,
+      target_id
+    });
+
+    return authDecision;
+  });
+}

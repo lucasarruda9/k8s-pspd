@@ -1,0 +1,233 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: grupo-04
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus:9090
+        access: proxy
+        isDefault: true
+      - name: Loki
+        type: loki
+        url: http://loki:3100
+        access: proxy
+      - name: Jaeger
+        type: jaeger
+        url: http://jaeger:16686
+        access: proxy
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards-provider
+  namespace: grupo-04
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: 'pspd-dashboards'
+        orgId: 1
+        folder: 'PSPD'
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-pspd
+  namespace: grupo-04
+data:
+  pspd-overview.json: |
+    {
+      "title": "PSPD - Visao geral dos microservicos",
+      "uid": "pspd-overview",
+      "schemaVersion": 38,
+      "panels": [
+        {
+          "title": "Requisicoes por sec (API Gateway)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "targets": [
+            {
+              "expr": "rate(http_requests_total{kubernetes_namespace='pspd',app='api-gateway'}[1m])",
+              "legendFormat": "{{method}} {{status}}"
+            }
+          ]
+        },
+        {
+          "title": "Latencia P95 (ms)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{kubernetes_namespace='pspd'}[5m])) by (le, app)) * 1000",
+              "legendFormat": "{{app}}"
+            }
+          ]
+        },
+        {
+          "title": "Uso de cpu por pod",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "targets": [
+            {
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace='pspd', container!=''}[1m])) by (pod)",
+              "legendFormat": "{{pod}}"
+            }
+          ]
+        },
+        {
+          "title": "Replicas ativas por deployment (HPA)",
+          "type": "stat",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "targets": [
+            {
+              "expr": "kube_deployment_status_replicas_available{namespace='pspd'}",
+              "legendFormat": "{{deployment}}"
+            }
+          ]
+        }
+      ]
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-auditoria
+  namespace: grupo-04
+data:
+  pspd-auditoria.json: |
+    {
+      "title": "PSPD - Auditoria e negocio",
+      "uid": "pspd-auditoria",
+      "schemaVersion": 38,
+      "panels": [
+        {
+          "title": "Logins por minuto (Keycloak)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "targets": [
+            {
+              "datasource": "Loki",
+              "expr": "sum(count_over_time({app=\"keycloak\", namespace=\"pspd\"} |= \"LOGIN\"[1m]))",
+              "legendFormat": "logins/min"
+            }
+          ]
+        },
+        {
+          "title": "Erros de autenticacao (401/403)",
+          "type": "stat",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+          "targets": [
+            {
+              "expr": "sum(increase(http_requests_total{namespace=\"pspd\", status=~\"401|403\"}[5m]))",
+              "legendFormat": "erros de auth"
+            }
+          ]
+        },
+        {
+          "title": "Traces de request (Jaeger)",
+          "type": "traces",
+          "datasource": "Jaeger",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+          "targets": [
+            {
+              "datasource": "Jaeger",
+              "queryType": "search",
+              "service": "api-gateway"
+            }
+          ]
+        },
+        {
+          "title": "Logs recentes dos pods",
+          "type": "logs",
+          "datasource": "Loki",
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+          "targets": [
+            {
+              "datasource": "Loki",
+              "expr": "{namespace=\"pspd\"}"
+            }
+          ]
+        }
+      ]
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: grupo-04
+  labels:
+    app: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:10.4.0
+          ports:
+            - containerPort: 3000
+          env:
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              value: "pspd2026"
+            - name: GF_USERS_ALLOW_SIGN_UP
+              value: "false"
+          volumeMounts:
+            - name: datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboards-provider
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboards-content
+              mountPath: /var/lib/grafana/dashboards
+            - name: dashboards-auditoria
+              mountPath: /var/lib/grafana/dashboards/auditoria
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+      volumes:
+        - name: datasources
+          configMap:
+            name: grafana-datasources
+        - name: dashboards-provider
+          configMap:
+            name: grafana-dashboards-provider
+        - name: dashboards-content
+          configMap:
+            name: grafana-dashboard-pspd
+        - name: dashboards-auditoria
+          configMap:
+            name: grafana-dashboard-auditoria
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: grupo-04
+spec:
+  selector:
+    app: grafana
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+  type: LoadBalancer
