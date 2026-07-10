@@ -153,34 +153,62 @@ export default function Dashboard({ usuario, aoDeslogar }) {
     }
   };
 
-  const exportarFHIR = () => {
+  const exportarFHIR = async () => {
     if (!dadosDaVisao) return;
     
-    const fhirResource = {
-      resourceType: "Bundle",
-      type: "collection",
-      entry: []
-    };
+    let raw_patients = [];
+    let raw_encounters = [];
+    let raw_events = [];
 
-    let dadosParaExportar = dadosDaVisao.pacientes || dadosDaVisao.amostras || [];
-
+    // Adapta os dados locais para o formato esperado pelo backend
+    const dadosParaExportar = dadosDaVisao.pacientes || dadosDaVisao.amostras || [];
+    
+    // Simplificando o envio baseando-nos no tipo
     dadosParaExportar.forEach(item => {
-      fhirResource.entry.push({
-        resource: {
-          resourceType: "Patient",
-          id: item.id || "unknown",
-          ...item
-        }
+      raw_patients.push({
+        id_paciente: item.id || item.pseudo_id || "unknown",
+        nome: item.nomeCompleto || item.iniciais || "",
+        data_nascimento: item.nascimento || item.idade?.toString() || "",
+        genero: item.sexo || ""
       });
+      if (item.diagnostico) {
+        raw_events.push({
+          id_paciente: item.id || "unknown",
+          codigo_tipo_evento: item.diagnostico,
+          tipo_evento: "Condição"
+        });
+      }
     });
 
-    const blob = new Blob([JSON.stringify(fhirResource, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `exportacao-fhir-${dadosDaVisao.tipo}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    let access_level = "FULL";
+    if (usuario.role === "estagiario") access_level = "PARTIAL";
+    if (usuario.role === "pesquisador") access_level = "ANONYMIZED";
+
+    try {
+      const response = await api.post('/transform/transform-fhir', {
+        access_level,
+        raw_patients,
+        raw_encounters,
+        raw_events
+      });
+      
+      const fhirResource = {
+        resourceType: "Bundle",
+        type: "collection",
+        entry: response.data
+      };
+
+      const blob = new Blob([JSON.stringify(fhirResource, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `exportacao-fhir-${dadosDaVisao.tipo}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Erro ao exportar FHIR", err);
+      alert("Falha na comunicação com o serviço de transformação FHIR.");
+    }
   };
 
   return (

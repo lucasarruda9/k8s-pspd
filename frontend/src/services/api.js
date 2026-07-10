@@ -1,8 +1,8 @@
 import axios from 'axios';
-import { keycloak } from './keycloak';
+import keycloak from './keycloak';
 
 // A URL da API Gateway virá do K8s, ou usa localhost por padrão
-const API_BASE_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api';
+const API_BASE_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:3000/api';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
