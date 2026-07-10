@@ -61,13 +61,8 @@ stringData:
 Execute os comandos abaixo em sequencia, no mesmo terminal:
 
 ```bash
-# 1. Base (Secrets, Keycloak)
 kubectl apply -f k8s/base/ --kubeconfig=.kube/kubeconfig-grupo-4.yaml
-
-# 2. Microsservicos (API Gateway, Auth, Patient Data, Data Transform, Frontend)
 kubectl apply -f k8s/services/ --kubeconfig=.kube/kubeconfig-grupo-4.yaml
-
-# 3. Observabilidade (Prometheus, Grafana, Loki, Jaeger, Alertmanager)
 kubectl apply -f k8s/observability/ --kubeconfig=.kube/kubeconfig-grupo-4.yaml
 ```
 
@@ -99,5 +94,5 @@ npm run dev
 
 | Versao | Descricao | Autor(es) | Data | Revisor(es) | Data de Revisao |
 |---|---|---|---|---|---|
-| 1.0 | Estrutura inicial do README | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 09/07/2026 | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 09/07/2026 |
+| 1.0 | Estrutura inicial do README | - | - | - | - |
 | 1.1 | Adiciona instrucoes de deploy Kubernetes | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 |
