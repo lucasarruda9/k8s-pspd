@@ -34,12 +34,65 @@ docker-compose up --build
 
 O Frontend estará disponível em `http://localhost`.
 
-### 2. Via Node.js Tradicional
+### 2. Via Kubernetes (Cluster Remoto)
 
-Caso deseje rodar especificamente o Frontend na sua máquina física:
+#### Pre-requisitos
+
+- `kubectl` instalado na maquina local.
+- Arquivo `kubeconfig` do cluster colocado em `.kube/kubeconfig-grupo-4.yaml` na raiz do projeto.
+
+#### Configuracao de Secrets
+
+Antes do deploy, edite o arquivo `k8s/base/secrets.yaml` e preencha as credenciais reais do banco de dados e do JWT:
+
+```yaml
+stringData:
+  jwt-secret: "<sua-chave-jwt>"
+  postgres-user: "<usuario-do-banco>"
+  postgres-password: "<senha-do-banco>"
+  postgres-db: "<nome-do-banco>"
+  postgres-host: "<ip-do-host-postgres>"
+```
+
+> Nunca commite esse arquivo com credenciais reais. Use `git update-index --assume-unchanged k8s/base/secrets.yaml` para impedir que o Git rastreie alteracoes locais.
+
+#### Deploy
+
+Execute os comandos abaixo em sequencia, no mesmo terminal:
+
+```bash
+kubectl apply -f k8s/base/ --kubeconfig=.kube/kubeconfig-grupo-4.yaml
+kubectl apply -f k8s/services/ --kubeconfig=.kube/kubeconfig-grupo-4.yaml
+kubectl apply -f k8s/observability/ --kubeconfig=.kube/kubeconfig-grupo-4.yaml
+```
+
+#### Verificacao
+
+```bash
+kubectl get pods -n grupo-4 --kubeconfig=.kube/kubeconfig-grupo-4.yaml
+```
+
+Todos os pods devem apresentar status `Running`.
+
+#### Remocao completa
+
+Para derrubar todos os recursos do namespace:
+
+```bash
+kubectl delete all --all -n grupo-4 --kubeconfig=.kube/kubeconfig-grupo-4.yaml
+```
+
+### 3. Via Node.js Tradicional
+
+Caso deseje rodar especificamente o Frontend na sua maquina fisica:
 
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+
+| Versao | Descricao | Autor(es) | Data | Revisor(es) | Data de Revisao |
+|---|---|---|---|---|---|
+| 1.0 | Estrutura inicial do README | - | - | - | - |
+| 1.1 | Adiciona instrucoes de deploy Kubernetes | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 |
