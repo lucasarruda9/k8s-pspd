@@ -19,8 +19,6 @@ import (
 	pb "github.com/lucasarruda9/k8s-pspd/data-transform-go/proto"
 )
 
-// cohortFetcher abstrai a origem da coorte (o PatientDataService em produção,
-// um fake nos testes). Permite testar GetCohortStatistics sem subir o Node.
 type cohortFetcher interface {
 	FetchCohort(ctx context.Context, projectID string) ([]*pb.DBPatient, []*pb.DBClinicalEvent, error)
 }
@@ -73,8 +71,6 @@ func main() {
 		log.Fatalf("falha ao escutar em %s: %v", addr, err)
 	}
 
-	// cliente gRPC do PatientDataService (Node) — origem da coorte para as
-	// estatísticas. Endereço configurável para o K8S (ex: patient-data:50052).
 	patAddr := envOr("PATIENT_DATA_ADDR", "localhost:50052")
 	patClient, err := patientdata.Dial(patAddr)
 	if err != nil {

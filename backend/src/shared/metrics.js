@@ -29,13 +29,6 @@ export const authDecisions = new client.Counter({
   registers: [register],
 });
 
-export const fhirResources = new client.Counter({
-  name: 'fhir_resources_generated_total',
-  help: 'Recursos FHIR gerados por tipo',
-  labelNames: ['resource_type', 'access_level'],
-  registers: [register],
-});
-
 export function instrument(service, method, handler) {
   return (call, callback) => {
     const stop = grpcLatency.startTimer({ service, method });

@@ -14,8 +14,6 @@ import (
 	pb "github.com/lucasarruda9/k8s-pspd/data-transform-go/proto"
 )
 
-// fakeCohorts implementa cohortFetcher com o mockdata, evitando subir o
-// PatientDataService (Node) real nos testes.
 type fakeCohorts struct{}
 
 func (fakeCohorts) FetchCohort(_ context.Context, projectID string) ([]*pb.DBPatient, []*pb.DBClinicalEvent, error) {
