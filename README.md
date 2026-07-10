@@ -48,6 +48,7 @@ Antes do deploy, edite o arquivo `k8s/base/secrets.yaml` e preencha as credencia
 ```yaml
 stringData:
   jwt-secret: "<sua-chave-jwt>"
+  keycloak-admin-password: "<senha-admin-keycloak>"
   postgres-user: "<usuario-do-banco>"
   postgres-password: "<senha-do-banco>"
   postgres-db: "<nome-do-banco>"
