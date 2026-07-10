@@ -60,7 +60,7 @@ await fastify.register(transformRoutes, { prefix: '/api/transform' });
 
 const start = async () => {
   try {
-    await fastify.listen({ port: fastify.config.PORT });
+    await fastify.listen({ port: fastify.config.PORT, host: '0.0.0.0' });
     fastify.log.info('Gateway rodando em http://localhost:3000');
     fastify.log.info('Documentação em http://localhost:3000/docs');
   } catch (err) {

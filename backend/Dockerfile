@@ -1,13 +1,11 @@
-FROM node:22-alpine
-
+FROM node:20-alpine
 WORKDIR /app
 
-COPY backend/package.json backend/package-lock.json ./
-RUN npm ci --omit=dev
+COPY package*.json ./
+RUN npm ci --only=production
 
-COPY backend/src ./src
+COPY . .
 
-COPY proto /app/proto
-ENV PROTO_PATH=/app/proto/sistema.proto
+EXPOSE 3000
 
-CMD ["node", "src/start-all.js"]
+CMD ["npm", "run", "start:all"]

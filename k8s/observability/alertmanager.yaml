@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: alertmanager-config
-  namespace: pspd
+  namespace: grupo-4
 data:
   alertmanager.yaml: |
     global:
@@ -23,7 +23,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: prometheus-alert-rules
-  namespace: pspd
+  namespace: grupo-4
 data:
   pspd-rules.yaml: |
     groups:
@@ -60,7 +60,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: alertmanager
-  namespace: pspd
+  namespace: grupo-4
   labels:
     app: alertmanager
 spec:
@@ -100,7 +100,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: alertmanager
-  namespace: pspd
+  namespace: grupo-4
 spec:
   selector:
     app: alertmanager
