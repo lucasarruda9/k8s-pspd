@@ -1,5 +1,5 @@
-import React from 'react';
-import { getDadosPorPerfil } from '../services/mockData';
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
 import './Dashboard.css';
 
 //componente generico para evitar clones de codigo (JSCPD)
@@ -102,12 +102,44 @@ const VisaoDoPesquisador = ({ estatisticas, amostras }) => (
 );
 
 export default function Dashboard({ usuario, aoDeslogar }) {
-  //busca os dados dinamicamente usando a role
-  const dadosDaVisao = getDadosPorPerfil(usuario?.role);
+  const [dadosDaVisao, setDadosDaVisao] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDados = async () => {
+      try {
+        setLoading(true);
+        if (usuario?.role === 'medico' || usuario?.role === 'estagiario') {
+          const res = await api.get('/patients');
+          setDadosDaVisao({ tipo: usuario.role, pacientes: res.data });
+        } else if (usuario?.role === 'pesquisador') {
+          const resEstat = await api.get('/patients/statistics/1');
+          const resAmostra = await api.get('/patients/cohorts/1');
+          setDadosDaVisao({ 
+            tipo: 'pesquisador', 
+            estatisticas: resEstat.data, 
+            amostras: resAmostra.data?.patients || resAmostra.data || [] 
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        setError('Erro ao buscar dados do API Gateway.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (usuario?.role) {
+      fetchDados();
+    }
+  }, [usuario]);
 
   //funcao que decide qual tela mostrar baseada no tipo de usuario
   const decidirOQueMostrar = () => {
-    if (!dadosDaVisao) return <p>Perfil não autorizado ou carregando.</p>;
+    if (loading) return <p>Carregando dados seguros do servidor...</p>;
+    if (error) return <p style={{color: 'red'}}>{error}</p>;
+    if (!dadosDaVisao) return <p>Perfil não autorizado ou sem dados.</p>;
 
     switch (dadosDaVisao.tipo) {
       case 'medico':
