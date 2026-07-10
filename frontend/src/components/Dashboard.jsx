@@ -153,6 +153,36 @@ export default function Dashboard({ usuario, aoDeslogar }) {
     }
   };
 
+  const exportarFHIR = () => {
+    if (!dadosDaVisao) return;
+    
+    const fhirResource = {
+      resourceType: "Bundle",
+      type: "collection",
+      entry: []
+    };
+
+    let dadosParaExportar = dadosDaVisao.pacientes || dadosDaVisao.amostras || [];
+
+    dadosParaExportar.forEach(item => {
+      fhirResource.entry.push({
+        resource: {
+          resourceType: "Patient",
+          id: item.id || "unknown",
+          ...item
+        }
+      });
+    });
+
+    const blob = new Blob([JSON.stringify(fhirResource, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `exportacao-fhir-${dadosDaVisao.tipo}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="dashboard-layout">
       <header className="dashboard-header">
@@ -161,6 +191,9 @@ export default function Dashboard({ usuario, aoDeslogar }) {
           <h1>Sistema Clínico</h1>
         </div>
         <div className="user-profile">
+          <button className="btn" onClick={exportarFHIR} style={{marginRight: '15px', backgroundColor: '#8B5CF6'}}>
+            ⬇ Exportar FHIR
+          </button>
           <span className="user-info">
             <strong>{usuario?.username}</strong>
             <span className="badge">{usuario?.role}</span>
