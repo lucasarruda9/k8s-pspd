@@ -3,6 +3,7 @@ import jwt from '@fastify/jwt';
 import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
+import env from '@fastify/env';
 
 import authRoutes from './routes/authRoutes.js';
 import patientRoutes from './routes/patientRoutes.js';
@@ -12,8 +13,20 @@ const fastify = Fastify({ logger: true });
 
 await fastify.register(cors);
 
+await fastify.register(env, {
+  schema: {
+    type: 'object',
+    required: ['JWT_SECRET'],
+    properties: {
+      JWT_SECRET: { type: 'string' },
+      PORT: { type: 'number', default: 3000 }
+    }
+  },
+  dotenv: true
+});
+
 await fastify.register(jwt, {
-  secret: 'chave' // chave publica do keycloag
+  secret: fastify.config.JWT_SECRET
 });
 
 fastify.decorate("authenticate", async (request, reply) => {
@@ -47,7 +60,7 @@ await fastify.register(transformRoutes, { prefix: '/api/transform' });
 
 const start = async () => {
   try {
-    await fastify.listen({ port: 3000 });
+    await fastify.listen({ port: fastify.config.PORT });
     fastify.log.info('Gateway rodando em http://localhost:3000');
     fastify.log.info('Documentação em http://localhost:3000/docs');
   } catch (err) {
