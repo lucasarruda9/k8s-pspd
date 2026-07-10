@@ -1,24 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "[1/4] Criando cluser Kind..."
-kind create cluster --config k8s/cluster/kind-config.yaml
+KUBECONFIG_FLAG=""
+if [ -f ".kube/kubeconfig-grupo-4.yaml" ]; then
+    KUBECONFIG_FLAG="--kubeconfig=.kube/kubeconfig-grupo-4.yaml"
+    echo "[modo remoto] Usando cluster da UnB (grupo-04)"
+else
+    echo "[modo local] Nenhum kubeconfig encontrado, usando contexto padrão do kubectl"
+fi
 
-echo "[2/4] Aplicando base (namespace + secrtes)..."
-kubectl apply -f k8s/base/namespace.yaml
-kubectl apply -f k8s/base/secrets.yaml
+echo "[1/3] Aplicando base (namespace + secrets)..."
+kubectl $KUBECONFIG_FLAG apply -f k8s/base/namespace.yaml
+kubectl $KUBECONFIG_FLAG apply -f k8s/base/secrets.yaml
 
-echo "[3/4] Subindo promethues e grafana..."
-kubectl apply -f k8s/observability/prometheus.yaml
-kubectl apply -f k8s/observability/grafana.yaml
+echo "[2/3] Aplicando observabilidade (Jaeger + Loki + Alertmanager)..."
+kubectl $KUBECONFIG_FLAG apply -f k8s/observability/jaeger.yaml
+kubectl $KUBECONFIG_FLAG apply -f k8s/observability/loki-promtail.yaml
+kubectl $KUBECONFIG_FLAG apply -f k8s/observability/alertmanager.yaml
 
-# sobe os servicos (imagens placeholder - substituir quando backend exister)
-echo "[4/4] Subindo servicos..."
-kubectl apply -f k8s/services/
+echo "[3/3] Subindo microsserviços..."
+kubectl $KUBECONFIG_FLAG apply -f k8s/services/
 
 echo ""
-echo "Cluster pronto. pra expor o Grafana localmente:"
-echo "  kubectl port-forward -n pspd svc/grafana 3000:3000"
+echo "Deploy concluído. Para acompanhar os pods:"
+echo "  kubectl $KUBECONFIG_FLAG get pods -n grupo-04 -w"
 echo ""
-echo "pra rodar os teste de carga (backend tem q ta em pe):"
-echo "  GATEWAY_URL=http://localhost:8080 k6 run load-tests/k6-stress-test.js"
+echo "Para rodar os testes de carga (gateway deve estar em pé):"
+echo "  GATEWAY_URL=http://<IP_EXTERNO>:8080 k6 run load-tests/k6-stress-test.js"

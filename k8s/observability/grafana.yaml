@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-datasources
-  namespace: pspd
+  namespace: grupo-04
 data:
   datasources.yaml: |
     apiVersion: 1
@@ -25,7 +25,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-dashboards-provider
-  namespace: pspd
+  namespace: grupo-04
 data:
   dashboards.yaml: |
     apiVersion: 1
@@ -43,7 +43,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-dashboard-pspd
-  namespace: pspd
+  namespace: grupo-04
 data:
   pspd-overview.json: |
     {
@@ -102,7 +102,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-dashboard-auditoria
-  namespace: pspd
+  namespace: grupo-04
 data:
   pspd-auditoria.json: |
     {
@@ -165,7 +165,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: grafana
-  namespace: pspd
+  namespace: grupo-04
   labels:
     app: grafana
 spec:
@@ -222,7 +222,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: grafana
-  namespace: pspd
+  namespace: grupo-04
 spec:
   selector:
     app: grafana

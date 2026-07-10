@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: jaeger
-  namespace: pspd
+  namespace: grupo-04
   labels:
     app: jaeger
 spec:
@@ -41,7 +41,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: jaeger
-  namespace: pspd
+  namespace: grupo-04
 spec:
   selector:
     app: jaeger
