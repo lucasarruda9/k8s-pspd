@@ -9,15 +9,25 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 
+	"github.com/lucasarruda9/k8s-pspd/data-transform-go/internal/mockdata"
 	"github.com/lucasarruda9/k8s-pspd/data-transform-go/internal/transform"
 	pb "github.com/lucasarruda9/k8s-pspd/data-transform-go/proto"
 )
+
+// fakeCohorts implementa cohortFetcher com o mockdata, evitando subir o
+// PatientDataService (Node) real nos testes.
+type fakeCohorts struct{}
+
+func (fakeCohorts) FetchCohort(_ context.Context, projectID string) ([]*pb.DBPatient, []*pb.DBClinicalEvent, error) {
+	p, e := mockdata.FetchCohortForStatistics(projectID)
+	return p, e, nil
+}
 
 func setup(t *testing.T) (pb.DataTransformServiceClient, func()) {
 	t.Helper()
 	lis := bufconn.Listen(1024 * 1024)
 	s := grpc.NewServer()
-	pb.RegisterDataTransformServiceServer(s, &server{})
+	pb.RegisterDataTransformServiceServer(s, &server{cohorts: fakeCohorts{}})
 	go func() { _ = s.Serve(lis) }()
 
 	conn, err := grpc.NewClient("passthrough:///bufnet",

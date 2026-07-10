@@ -12,15 +12,22 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/lucasarruda9/k8s-pspd/data-transform-go/internal/mockdata"
 	"github.com/lucasarruda9/k8s-pspd/data-transform-go/internal/observability"
+	"github.com/lucasarruda9/k8s-pspd/data-transform-go/internal/patientdata"
 	"github.com/lucasarruda9/k8s-pspd/data-transform-go/internal/statistics"
 	"github.com/lucasarruda9/k8s-pspd/data-transform-go/internal/transform"
 	pb "github.com/lucasarruda9/k8s-pspd/data-transform-go/proto"
 )
 
+// cohortFetcher abstrai a origem da coorte (o PatientDataService em produção,
+// um fake nos testes). Permite testar GetCohortStatistics sem subir o Node.
+type cohortFetcher interface {
+	FetchCohort(ctx context.Context, projectID string) ([]*pb.DBPatient, []*pb.DBClinicalEvent, error)
+}
+
 type server struct {
 	pb.UnimplementedDataTransformServiceServer
+	cohorts cohortFetcher
 }
 
 var validTransformLevels = map[string]bool{
@@ -48,8 +55,12 @@ func (s *server) TransformToFHIR(_ context.Context, req *pb.TransformRequest) (*
 	return resp, nil
 }
 
-func (s *server) GetCohortStatistics(_ context.Context, req *pb.StatisticsRequest) (*pb.StatisticsResponse, error) {
-	patients, events := mockdata.FetchCohortForStatistics(req.GetProjectId())
+func (s *server) GetCohortStatistics(ctx context.Context, req *pb.StatisticsRequest) (*pb.StatisticsResponse, error) {
+	patients, events, err := s.cohorts.FetchCohort(ctx, req.GetProjectId())
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable,
+			"falha ao buscar coorte no PatientDataService: %v", err)
+	}
 	resp := statistics.Build(patients, events)
 	log.Printf("GetCohortStatistics: project=%s total_patients=%d", req.GetProjectId(), resp.TotalPatients)
 	return resp, nil
@@ -62,8 +73,18 @@ func main() {
 		log.Fatalf("falha ao escutar em %s: %v", addr, err)
 	}
 
+	// cliente gRPC do PatientDataService (Node) — origem da coorte para as
+	// estatísticas. Endereço configurável para o K8S (ex: patient-data:50052).
+	patAddr := envOr("PATIENT_DATA_ADDR", "localhost:50052")
+	patClient, err := patientdata.Dial(patAddr)
+	if err != nil {
+		log.Fatalf("falha ao criar cliente do PatientDataService (%s): %v", patAddr, err)
+	}
+	defer patClient.Close()
+	log.Printf("PatientDataService em %s (fonte das coortes)", patAddr)
+
 	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(observability.UnaryMetricsInterceptor))
-	pb.RegisterDataTransformServiceServer(grpcServer, &server{})
+	pb.RegisterDataTransformServiceServer(grpcServer, &server{cohorts: patClient})
 
 	metricsAddr := ":" + envOr("METRICS_PORT", "9103")
 	observability.StartMetricsServer(metricsAddr)
