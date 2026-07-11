@@ -1,0 +1,7 @@
+**/node_modules
+frontend
+k8s
+**/*.log
+**/coverage
+backend/tests
+*.pdf

@@ -1,20 +1,26 @@
-#usa uma imagem NodeJs leve como base
-FROM node:20-alpine
+# Estágio 1: Build da aplicação React/Vite
+FROM node:20-alpine AS builder
 
-#define o diretorio de trabalho dentro do conteiner
 WORKDIR /app
 
-#copia os arquivos de configuracao de dependencias
+# Instala dependências
 COPY package.json package-lock.json* ./
+RUN npm ci
 
-#instala as dependencias do projeto
-RUN npm install
-
-#copia o restante do codigo fonte
+# Copia código e realiza o build de produção
 COPY . .
+RUN npm run build
 
-#expoe a porta padrao que o Vite utiliza
-EXPOSE 5173
+# Estágio 2: Servidor Web Nginx (Alta performance para K8s)
+FROM nginx:alpine
 
-#comando para iniciar o servidor de desenvolvimento e expor para a rede
-CMD ["npm", "run", "dev", "--", "--host"]
+# Copia configuração customizada do Nginx para suportar navegação SPA
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copia os arquivos estáticos gerados no estágio de build
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Expõe a porta 80
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
