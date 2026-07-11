@@ -3,7 +3,7 @@ import Keycloak from 'keycloak-js';
 const keycloakConfig = {
   url: import.meta.env.VITE_KEYCLOAK_URL || 'https://kiriland.unb.br/keycloak',
   realm: import.meta.env.VITE_KEYCLOAK_REALM || 'grupo04',
-  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'grupo04'
+  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'frontend-client'
 };
 
 const keycloak = new Keycloak(keycloakConfig);
