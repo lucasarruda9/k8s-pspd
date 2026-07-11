@@ -1,0 +1,79 @@
+import { query } from '../../db/pool.js';
+import { queries } from '../../db/queries.js';
+
+const CONDICAO_DO_PROJETO = `
+  SELECT codigo_condicao
+  FROM projects
+  WHERE id_projeto = $1`;
+
+const asText = (v) => (v === null || v === undefined ? '' : String(v));
+const asDate = (v) => (v instanceof Date ? v.toISOString().slice(0, 10) : asText(v));
+const asTimestamp = (v) => (v instanceof Date ? v.toISOString() : asText(v));
+
+const toDBPatient = (r) => ({
+  id_paciente: asText(r.id_paciente),
+  nome: asText(r.nome),
+  data_nascimento: asDate(r.data_nascimento),
+  genero: asText(r.genero),
+  cidade: asText(r.cidade),
+  estado: asText(r.estado),
+  cpf: asText(r.cpf),
+  cns: asText(r.cns),
+});
+
+const toDBEncounter = (r) => ({
+  id_atendimento: asText(r.id_atendimento),
+  id_paciente: asText(r.id_paciente),
+  data_inicio: asTimestamp(r.data_inicio),
+  data_fim: asTimestamp(r.data_fim),
+  tipo_atendimento: asText(r.tipo_atendimento),
+  setor_departamento: asText(r.setor), 
+});
+
+const toDBClinicalEvent = (r) => ({
+  id_evento: asText(r.id_evento),
+  id_paciente: asText(r.id_paciente),
+  id_atendimento: asText(r.id_atendimento),
+  tipo_evento: asText(r.tipo_evento), 
+  codigo_tipo_evento: asText(r.codigo_evento), 
+  descricao_evento: asText(r.descricao_evento),
+  data_evento: asDate(r.data_evento),
+  valor: asText(r.valor),
+  unidade_valor: asText(r.unidade_valor),
+});
+
+export async function findPatients({ username, patientId }) {
+  const rows = patientId
+    ? await query(queries.pacienteDoCuidador, [username, patientId])
+    : await query(queries.pacientesDoCuidador, [username]);
+  return rows.map(toDBPatient);
+}
+
+export async function findEncounters(patientId) {
+  const rows = await query(queries.atendimentosDoPaciente, [patientId]);
+  return rows.map(toDBEncounter);
+}
+
+export async function findClinicalEvents(patientId) {
+  const rows = await query(queries.eventosClinicosDoPaciente, [patientId]);
+  return rows.map(toDBClinicalEvent);
+}
+
+export async function findCohortData(projectId) {
+  const projRows = await query(CONDICAO_DO_PROJETO, [projectId]);
+  if (projRows.length === 0) {
+    return { condition_code: '', patients: [], relevant_events: [] };
+  }
+  const conditionCode = projRows[0].codigo_condicao;
+
+  const [patientRows, eventRows] = await Promise.all([
+    query(queries.pacientesDaCoorte, [conditionCode]),
+    query(queries.eventosDaCoorte, [conditionCode]),
+  ]);
+
+  return {
+    condition_code: asText(conditionCode),
+    patients: patientRows.map(toDBPatient),
+    relevant_events: eventRows.map(toDBClinicalEvent),
+  };
+}

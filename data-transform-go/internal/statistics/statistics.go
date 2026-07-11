@@ -97,3 +97,64 @@ func buildAnonymizedExams(patients []*pb.DBPatient, events []*pb.DBClinicalEvent
 	}
 	return exams
 }
+func ageRanges(patients []*pb.DBPatient) []*pb.AgeRangeDistribution {
+    ranges := []string{"0-18", "19-39", "40-59", "60+"}
+    counts := make([]int, len(ranges))
+    now := time.Now()
+    
+    for _, p := range patients {
+        if age, ok := transform.ComputeAge(p.GetDataNascimento(), now); ok {
+            switch {
+            case age <= 18: counts[0]++
+            case age <= 39: counts[1]++
+            case age <= 59: counts[2]++
+            default: counts[3]++
+            }
+        }
+    }
+    
+    var res []*pb.AgeRangeDistribution
+    total := float64(len(patients))
+    for i, count := range ranges {
+        res = append(res, &pb.AgeRangeDistribution{
+            Range: count,
+            Percentage: float64(counts[i]) / total * 100,
+        })
+    }
+    return res
+}
+
+func departmentFrequency(encounters []*pb.DBEncounter) []*pb.DepartmentFrequency {
+    freq := make(map[string]int)
+    for _, e := range encounters {
+        freq[e.GetSetorDepartamento()]++
+    }
+    
+    var res []*pb.DepartmentFrequency
+    total := float64(len(encounters))
+    for name, count := range freq {
+        res = append(res, &pb.DepartmentFrequency{
+            DepartmentName: name,
+            Percentage: float64(count) / total * 100,
+        })
+    }
+    return res
+}
+
+func medicationFrequency(events []*pb.DBClinicalEvent) []*pb.MedicationFrequency {
+    freq := make(map[string]int)
+    for _, ev := range events {
+        if transform.EventKind(ev.GetTipoEvento()) == "medication" { // Verifique se esta função existe no seu transform
+            freq[ev.GetCodigoTipoEvento()]++
+        }
+    }
+    
+    var res []*pb.MedicationFrequency
+    for name, count := range freq {
+        res = append(res, &pb.MedicationFrequency{
+            MedicationName: name,
+            Count: int32(count),
+        })
+    }
+    return res
+}

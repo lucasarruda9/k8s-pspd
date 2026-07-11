@@ -24,7 +24,7 @@ function App() {
       }
       setInicializado(true);
     });
-  }, []);
+  }, [navegar]);
 
   //funcao para limpar a sessao e redirecionar para o login
   const realizarLogout = () => {

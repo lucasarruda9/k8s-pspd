@@ -1,0 +1,6 @@
+export const ACCESS_LEVELS = Object.freeze({
+  FULL: 'FULL',
+  PARTIAL: 'PARTIAL',
+  ANONYMIZED: 'ANONYMIZED',
+  AGGREGATED: 'AGGREGATED',
+});

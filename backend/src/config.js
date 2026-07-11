@@ -15,10 +15,6 @@ export const config = {
     host: process.env.PATIENT_HOST || '0.0.0.0',
     port: process.env.PATIENT_PORT || '50052',
   },
-  dataTransform: {
-    host: process.env.TRANSFORM_HOST || '0.0.0.0',
-    port: process.env.TRANSFORM_PORT || '50053',
-  },
   metricsPort: process.env.METRICS_PORT || '9101',
   logLevel: process.env.LOG_LEVEL || 'info',
 };

@@ -1,5 +1,5 @@
-import React from 'react';
-import { getDadosPorPerfil } from '../services/mockData';
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
 import './Dashboard.css';
 
 //componente generico para evitar clones de codigo (JSCPD)
@@ -102,12 +102,44 @@ const VisaoDoPesquisador = ({ estatisticas, amostras }) => (
 );
 
 export default function Dashboard({ usuario, aoDeslogar }) {
-  //busca os dados dinamicamente usando a role
-  const dadosDaVisao = getDadosPorPerfil(usuario?.role);
+  const [dadosDaVisao, setDadosDaVisao] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDados = async () => {
+      try {
+        setLoading(true);
+        if (usuario?.role === 'medico' || usuario?.role === 'estagiario') {
+          const res = await api.get('/patients');
+          setDadosDaVisao({ tipo: usuario.role, pacientes: res.data });
+        } else if (usuario?.role === 'pesquisador') {
+          const resEstat = await api.get('/patients/statistics/1');
+          const resAmostra = await api.get('/patients/cohorts/1');
+          setDadosDaVisao({ 
+            tipo: 'pesquisador', 
+            estatisticas: resEstat.data, 
+            amostras: resAmostra.data?.patients || resAmostra.data || [] 
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        setError('Erro ao buscar dados do API Gateway.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (usuario?.role) {
+      fetchDados();
+    }
+  }, [usuario]);
 
   //funcao que decide qual tela mostrar baseada no tipo de usuario
   const decidirOQueMostrar = () => {
-    if (!dadosDaVisao) return <p>Perfil não autorizado ou carregando.</p>;
+    if (loading) return <p>Carregando dados seguros do servidor...</p>;
+    if (error) return <p style={{color: 'red'}}>{error}</p>;
+    if (!dadosDaVisao) return <p>Perfil não autorizado ou sem dados.</p>;
 
     switch (dadosDaVisao.tipo) {
       case 'medico':
@@ -121,6 +153,64 @@ export default function Dashboard({ usuario, aoDeslogar }) {
     }
   };
 
+  const exportarFHIR = async () => {
+    if (!dadosDaVisao) return;
+    
+    let raw_patients = [];
+    let raw_encounters = [];
+    let raw_events = [];
+
+    // Adapta os dados locais para o formato esperado pelo backend
+    const dadosParaExportar = dadosDaVisao.pacientes || dadosDaVisao.amostras || [];
+    
+    // Simplificando o envio baseando-nos no tipo
+    dadosParaExportar.forEach(item => {
+      raw_patients.push({
+        id_paciente: item.id || item.pseudo_id || "unknown",
+        nome: item.nomeCompleto || item.iniciais || "",
+        data_nascimento: item.nascimento || item.idade?.toString() || "",
+        genero: item.sexo || ""
+      });
+      if (item.diagnostico) {
+        raw_events.push({
+          id_paciente: item.id || "unknown",
+          codigo_tipo_evento: item.diagnostico,
+          tipo_evento: "Condição"
+        });
+      }
+    });
+
+    let access_level = "FULL";
+    if (usuario.role === "estagiario") access_level = "PARTIAL";
+    if (usuario.role === "pesquisador") access_level = "ANONYMIZED";
+
+    try {
+      const response = await api.post('/transform/transform-fhir', {
+        access_level,
+        raw_patients,
+        raw_encounters,
+        raw_events
+      });
+      
+      const fhirResource = {
+        resourceType: "Bundle",
+        type: "collection",
+        entry: response.data
+      };
+
+      const blob = new Blob([JSON.stringify(fhirResource, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `exportacao-fhir-${dadosDaVisao.tipo}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Erro ao exportar FHIR", err);
+      alert("Falha na comunicação com o serviço de transformação FHIR.");
+    }
+  };
+
   return (
     <div className="dashboard-layout">
       <header className="dashboard-header">
@@ -129,6 +219,9 @@ export default function Dashboard({ usuario, aoDeslogar }) {
           <h1>Sistema Clínico</h1>
         </div>
         <div className="user-profile">
+          <button className="btn" onClick={exportarFHIR} style={{marginRight: '15px', backgroundColor: '#8B5CF6'}}>
+            ⬇ Exportar FHIR
+          </button>
           <span className="user-info">
             <strong>{usuario?.username}</strong>
             <span className="badge">{usuario?.role}</span>
