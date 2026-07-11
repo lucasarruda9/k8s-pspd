@@ -43,4 +43,17 @@ describe('Login Component', () => {
     //verifica se a funcao de login do Keycloak foi chamada
     expect(doLogin).toHaveBeenCalledTimes(1);
   });
+
+  it('deve exibir mensagem de erro se doLogin falhar', async () => {
+    doLogin.mockImplementation(() => {
+      throw new Error('Erro forçado no login');
+    });
+
+    render(<Login />);
+    
+    const botaoDeEntrar = screen.getByRole('button', { name: /Entrar via Keycloak/i });
+    fireEvent.click(botaoDeEntrar);
+
+    expect(await screen.findByText('Falha ao redirecionar para o Keycloak')).toBeInTheDocument();
+  });
 });
