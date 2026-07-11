@@ -179,7 +179,27 @@ message StatisticsResponse {
   int32 total_patients = 1;         // Card 1: Total de Pacientes na Coorte (ex: 14000)
   string gender_distribution = 2;   // Card 2: Distribuição por Sexo (ex: "70% M | 30% H")
   string average_age = 3;           // Card 3: Média de Idade (ex: "61.5 anos")
-  repeated AnonymizedExam sample_exams = 4; // Tabela: Amostra de Exames Anonimizados
+  repeated AgeRangeDistribution age_ranges = 4; 
+  repeated DepartmentFrequency departments = 5;
+  repeated MedicationFrequency medications = 6;
+  
+  repeated AnonymizedExam sample_exams = 7;
+}
+
+// Definição de novas estruturas de suporte
+message AgeRangeDistribution {
+  string range = 1;
+  float percentage = 2;
+}
+
+message DepartmentFrequency {
+  string department_name = 1;
+  float percentage = 2;
+}
+
+message MedicationFrequency {
+  string medication_name = 1;
+  int32 count = 2;
 }
 
 message AnonymizedExam {
