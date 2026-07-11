@@ -21,8 +21,8 @@ spec:
     spec:
       containers:
         - name: auth-service
-          image: pspd/auth-service:latest
-          imagePullPolicy: IfNotPresent
+          image: artmendy/auth-service:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8081
           env:

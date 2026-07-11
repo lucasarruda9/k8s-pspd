@@ -52,7 +52,7 @@ data:
           - role: pod
             namespaces:
               names:
-                - pspd
+                - grupo-4
         relabel_configs:
           - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
             action: keep
@@ -74,13 +74,6 @@ data:
           - source_labels: [__meta_kubernetes_pod_name]
             action: replace
             target_label: kubernetes_pod_name
-
-      - job_name: 'kubernetes-nodes'
-        kubernetes_sd_configs:
-          - role: node
-        relabel_configs:
-          - action: labelmap
-            regex: __meta_kubernetes_node_label_(.+)
 ---
 apiVersion: apps/v1
 kind: Deployment

@@ -57,7 +57,7 @@ data:
           "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
           "targets": [
             {
-              "expr": "rate(http_requests_total{kubernetes_namespace='pspd',app='api-gateway'}[1m])",
+              "expr": "rate(http_requests_total{kubernetes_namespace='grupo-4',app='api-gateway'}[1m])",
               "legendFormat": "{{method}} {{status}}"
             }
           ]
@@ -68,7 +68,7 @@ data:
           "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
           "targets": [
             {
-              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{kubernetes_namespace='pspd'}[5m])) by (le, app)) * 1000",
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{kubernetes_namespace='grupo-4'}[5m])) by (le, app)) * 1000",
               "legendFormat": "{{app}}"
             }
           ]
@@ -79,7 +79,7 @@ data:
           "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
           "targets": [
             {
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace='pspd', container!=''}[1m])) by (pod)",
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace='grupo-4', container!=''}[1m])) by (pod)",
               "legendFormat": "{{pod}}"
             }
           ]
@@ -90,7 +90,7 @@ data:
           "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
           "targets": [
             {
-              "expr": "kube_deployment_status_replicas_available{namespace='pspd'}",
+              "expr": "kube_deployment_status_replicas_available{namespace='grupo-4'}",
               "legendFormat": "{{deployment}}"
             }
           ]
@@ -117,7 +117,7 @@ data:
           "targets": [
             {
               "datasource": "Loki",
-              "expr": "sum(count_over_time({app=\"keycloak\", namespace=\"pspd\"} |= \"LOGIN\"[1m]))",
+              "expr": "sum(count_over_time({app=\"keycloak\", namespace=\"grupo-4\"} |= \"LOGIN\"[1m]))",
               "legendFormat": "logins/min"
             }
           ]
@@ -128,7 +128,7 @@ data:
           "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
           "targets": [
             {
-              "expr": "sum(increase(http_requests_total{namespace=\"pspd\", status=~\"401|403\"}[5m]))",
+              "expr": "sum(increase(http_requests_total{namespace=\"grupo-4\", status=~\"401|403\"}[5m]))",
               "legendFormat": "erros de auth"
             }
           ]
@@ -154,7 +154,7 @@ data:
           "targets": [
             {
               "datasource": "Loki",
-              "expr": "{namespace=\"pspd\"}"
+              "expr": "{namespace=\"grupo-4\"}"
             }
           ]
         }
