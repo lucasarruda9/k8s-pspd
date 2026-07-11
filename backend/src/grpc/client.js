@@ -1,13 +1,20 @@
 import { clinicalProto, grpc } from './loader.js';
 import { config } from '../config.js';
 
+function getHost(envVar, defaultHost) {
+  if (process.env[envVar]) {
+    return process.env[envVar].replace('http://', '').replace('https://', '');
+  }
+  return defaultHost;
+}
+
 const authClient = new clinicalProto.AuthorizationService(
-  `127.0.0.1:${config.authorization.port}`,
+  getHost('AUTH_SERVICE_URL', `127.0.0.1:${config.authorization.port}`),
   grpc.credentials.createInsecure()
 );
 
 const patientClient = new clinicalProto.PatientDataService(
-  `127.0.0.1:${config.patientData.port}`,
+  getHost('PATIENT_DATA_SERVICE_URL', `127.0.0.1:${config.patientData.port}`),
   grpc.credentials.createInsecure()
 );
 
