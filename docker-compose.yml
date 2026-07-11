@@ -37,6 +37,8 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
       - KEYCLOAK_URL=${KEYCLOAK_URL}
+    volumes:
+      - ./proto:/proto:ro
     depends_on:
       db:
         condition: service_healthy
