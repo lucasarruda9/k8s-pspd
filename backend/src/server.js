@@ -36,11 +36,12 @@ let publicKey = null;
 async function getPublicKey() {
   if (publicKey) return publicKey;
   try {
+    const realm = process.env.KEYCLOAK_REALM || 'pspd-realm'; //pra poder testar localmente
     let realmRes;
     try {
-      realmRes = await fetch('http://keycloak:8080/realms/pspd-realm');
+      realmRes = await fetch(`http://keycloak:8080/realms/${realm}`);
     } catch (err) {
-      realmRes = await fetch(`${process.env.KEYCLOAK_URL || 'http://localhost:8080'}/realms/pspd-realm`);
+      realmRes = await fetch(`${process.env.KEYCLOAK_URL || 'http://localhost:8080'}/realms/${realm}`);
     }
     
     if (realmRes && realmRes.ok) {
