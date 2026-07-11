@@ -27,10 +27,10 @@ metadata:
 data:
   pspd-rules.yaml: |
     groups:
-      - name: pspd-infra
+      - name: grupo-4-infra
         rules:
           - alert: HighCpuUsage
-            expr: sum(rate(container_cpu_usage_seconds_total{namespace="pspd", container!=""}[1m])) by (pod) > 0.8
+            expr: sum(rate(container_cpu_usage_seconds_total{namespace="grupo-4", container!=""}[1m])) by (pod) > 0.8
             for: 2m
             labels:
               severity: warning
@@ -39,16 +39,16 @@ data:
               description: "Uso acima de 80% por mais de 2 minutos."
 
           - alert: HighErrorRate
-            expr: sum(rate(http_requests_total{namespace="pspd", status=~"5.."}[1m])) / sum(rate(http_requests_total{namespace="pspd"}[1m])) > 0.05
+            expr: sum(rate(http_requests_total{namespace="grupo-4", status=~"5.."}[1m])) / sum(rate(http_requests_total{namespace="grupo-4"}[1m])) > 0.05
             for: 1m
             labels:
               severity: critical
             annotations:
               summary: "Taxa de erros HTTP acima de 5%"
-              description: "Namespace pspd com taxa de erro {{ $value | humanizePercentage }}."
+              description: "Namespace grupo-4 com taxa de erro {{ $value | humanizePercentage }}."
 
           - alert: PodNotReady
-            expr: kube_pod_status_ready{namespace="pspd", condition="false"} == 1
+            expr: kube_pod_status_ready{namespace="grupo-4", condition="false"} == 1
             for: 5m
             labels:
               severity: critical
