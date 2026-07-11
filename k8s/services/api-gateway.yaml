@@ -37,6 +37,10 @@ spec:
               value: "http://patient-data:8082"
             - name: DATA_TRANSFORM_SERVICE_URL
               value: "http://data-transform:8083"
+            - name: KEYCLOAK_URL
+              value: "https://kiriland.unb.br/keycloak"
+            - name: KEYCLOAK_REALM
+              value: "grupo04"
           resources:
             requests:
               cpu: "100m"
