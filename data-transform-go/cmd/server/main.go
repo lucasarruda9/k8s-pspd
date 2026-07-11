@@ -8,6 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -65,6 +67,16 @@ func (s *server) GetCohortStatistics(ctx context.Context, req *pb.StatisticsRequ
 }
 
 func main() {
+	// Inicializa OpenTelemetry — deve ser a primeira coisa no main
+	shutdownTracer := observability.InitTracer()
+	defer func() {
+		if err := shutdownTracer(context.Background()); err != nil {
+			log.Printf("[OTel] erro ao encerrar tracer: %v", err)
+		}
+	}()
+	tracer := otel.Tracer("data-transform-go")
+	_ = tracer // disponível para uso manual em handlers futuros
+
 	addr := ":" + envOr("TRANSFORM_PORT", "50053")
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -79,7 +91,13 @@ func main() {
 	defer patClient.Close()
 	log.Printf("PatientDataService em %s (fonte das coortes)", patAddr)
 
-	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(observability.UnaryMetricsInterceptor))
+	// gRPC com interceptors: métricas Prometheus + rastreamento OTel
+	grpcServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			observability.UnaryMetricsInterceptor,
+			otelgrpc.UnaryServerInterceptor(),
+		),
+	)
 	pb.RegisterDataTransformServiceServer(grpcServer, &server{cohorts: patClient})
 
 	metricsAddr := ":" + envOr("METRICS_PORT", "9103")
