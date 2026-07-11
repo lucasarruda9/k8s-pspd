@@ -6,14 +6,15 @@ import cors from '@fastify/cors';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import env from '@fastify/env';
+import { startMetricsServer } from './shared/metrics.js';
 
 import authRoutes from './routes/authRoutes.js';
 import patientRoutes from './routes/patientRoutes.js';
 import transformRoutes from './routes/transformRoutes.js';
 
 import { grpcClient } from './grpc/client.js';
-import { start as startAuth } from './services/authorization/server.js';
-import { start as startPatient } from './services/patientData/server.js';
+
+const SERVICE = 'api-gateway';
 
 const fastify = Fastify({ logger: true });
 
@@ -96,12 +97,8 @@ await fastify.register(transformRoutes, { prefix: '/api/transform' });
 
 const start = async () => {
   try {
-    startAuth();
-    startPatient();
-    
     await fastify.listen({ port: fastify.config.PORT, host: '0.0.0.0' });
-    fastify.log.info('Gateway rodando em http://localhost:3000');
-    fastify.log.info('Documentação em http://localhost:3000/docs');
+    startMetricsServer(SERVICE, process.env.GATEWAY_METRICS_PORT || 9100);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

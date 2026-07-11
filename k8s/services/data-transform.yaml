@@ -25,11 +25,14 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8083
+            - containerPort: 9103
           env:
             - name: TRANSFORM_PORT
               value: "8083"
             - name: PATIENT_DATA_ADDR
               value: "patient-data:8082"
+            - name: METRICS_PORT
+              value: "9103"
           resources:
             requests:
               cpu: "200m"
