@@ -19,8 +19,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: pspd/frontend:latest
-          imagePullPolicy: IfNotPresent
+          image: artmendy/frontend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 5173
           env:

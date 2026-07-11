@@ -21,8 +21,8 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          image: pspd/api-gateway:latest
-          imagePullPolicy: IfNotPresent
+          image: artmendy/api-gateway:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000
           env:
