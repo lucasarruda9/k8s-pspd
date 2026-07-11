@@ -26,7 +26,10 @@ export const initKeycloak = (onAuthenticatedCallback) => {
   .then((authenticated) => {
     onAuthenticatedCallback(authenticated);
   })
-  .catch(console.error);
+  .catch((err) => {
+    console.error('Erro na inicialização do Keycloak:', err);
+    onAuthenticatedCallback(false);
+  });
 };
 
 export const doLogin = keycloak.login;
