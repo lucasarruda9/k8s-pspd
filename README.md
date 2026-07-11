@@ -94,5 +94,5 @@ npm run dev
 
 | Versao | Descricao | Autor(es) | Data | Revisor(es) | Data de Revisao |
 |---|---|---|---|---|---|
-| 1.0 | Estrutura inicial do README | - | - | - | - |
+| 1.0 | Estrutura inicial do README | [João Pedro Cota](https://github.com/johnaopedro) | 10/07/2026 | [João Pedro Cota](https://github.com/johnaopedro) | 10/07/2026 |
 | 1.1 | Adiciona instrucoes de deploy Kubernetes | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 |
