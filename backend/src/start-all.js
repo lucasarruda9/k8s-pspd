@@ -1,4 +1,3 @@
-// IMPORTANTE: tracer deve ser importado PRIMEIRO para instrumentar todos os módulos
 import './tracer.js';
 
 import { start as startAuth } from './services/authorization/server.js';

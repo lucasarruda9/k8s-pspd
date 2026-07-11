@@ -1,7 +1,3 @@
-// Package observability fornece rastreamento distribuído via OpenTelemetry
-// para o DataTransformService (Go). Os spans gerados aqui são propagados
-// para o Jaeger, completando o trace end-to-end:
-//   Browser → API Gateway → DataTransformService
 package observability
 
 import (
@@ -18,7 +14,6 @@ import (
 )
 
 // InitTracer inicializa o SDK do OpenTelemetry.
-// Retorna uma função de shutdown que deve ser chamada no encerramento do processo.
 func InitTracer() func(context.Context) error {
 	otlpURL := os.Getenv("OTLP_COLLECTOR_URL")
 
@@ -36,7 +31,6 @@ func InitTracer() func(context.Context) error {
 		}
 		log.Printf("[OTel] Rastreamento iniciado → Jaeger OTLP (%s)", otlpURL)
 	} else {
-		// Em dev local, sem Jaeger, usa um exporter que descarta silenciosamente
 		exporter = &noopExporter{}
 		log.Println("[OTel] Rastreamento iniciado → modo dev (sem exportação)")
 	}
@@ -62,7 +56,6 @@ func InitTracer() func(context.Context) error {
 	}
 }
 
-// noopExporter descarta spans silenciosamente (usado em dev sem Jaeger)
 type noopExporter struct{}
 
 func (n *noopExporter) ExportSpans(_ context.Context, _ []sdktrace.ReadOnlySpan) error {

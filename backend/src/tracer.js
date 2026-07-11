@@ -1,11 +1,3 @@
-/**
- * Instrumentação OpenTelemetry para o API Gateway (Node.js/Fastify)
- * 
- * DEVE ser importado ANTES de qualquer outro módulo da aplicação.
- * Propaga o contexto de rastreamento (W3C TraceContext) para as chamadas
- * gRPC internas, fechando o trace end-to-end:
- *   Browser → API Gateway → AuthorizationService → PatientDataService
- */
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-node';

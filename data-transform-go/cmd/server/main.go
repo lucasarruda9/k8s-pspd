@@ -67,7 +67,7 @@ func (s *server) GetCohortStatistics(ctx context.Context, req *pb.StatisticsRequ
 }
 
 func main() {
-	// Inicializa OpenTelemetry — deve ser a primeira coisa no main
+	//inicializa OpenTelemetry
 	shutdownTracer := observability.InitTracer()
 	defer func() {
 		if err := shutdownTracer(context.Background()); err != nil {
@@ -75,7 +75,7 @@ func main() {
 		}
 	}()
 	tracer := otel.Tracer("data-transform-go")
-	_ = tracer // disponível para uso manual em handlers futuros
+	_ = tracer
 
 	addr := ":" + envOr("TRANSFORM_PORT", "50053")
 	lis, err := net.Listen("tcp", addr)
