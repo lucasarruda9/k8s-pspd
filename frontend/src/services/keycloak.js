@@ -18,15 +18,18 @@ export const initKeycloak = (onAuthenticatedCallback) => {
   isInitialized = true;
 
   keycloak.init({
-    onLoad: 'check-sso', // Check if already logged in
-    silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
+    // onLoad: 'check-sso', //ta dando erro de  Content Security Policy (CSP)
+    // silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
     pkceMethod: 'S256',
-    checkLoginIframe: false, // Desativa iframe em dev para evitar erros de timeout de SSO
+    checkLoginIframe: false, // Desativa iframe em dev para evitar erros de timeout de SSO e CSP
   })
   .then((authenticated) => {
     onAuthenticatedCallback(authenticated);
   })
-  .catch(console.error);
+  .catch((err) => {
+    console.error('Erro na inicialização do Keycloak:', err);
+    onAuthenticatedCallback(false);
+  });
 };
 
 export const doLogin = keycloak.login;

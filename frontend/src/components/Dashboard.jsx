@@ -110,10 +110,11 @@ export default function Dashboard({ usuario, aoDeslogar }) {
     const fetchDados = async () => {
       try {
         setLoading(true);
-        if (usuario?.role === 'medico' || usuario?.role === 'estagiario') {
+        const roleLower = usuario?.role?.toLowerCase();
+        if (roleLower === 'medico' || roleLower === 'estagiario') {
           const res = await api.get('/patients');
-          setDadosDaVisao({ tipo: usuario.role, pacientes: res.data });
-        } else if (usuario?.role === 'pesquisador') {
+          setDadosDaVisao({ tipo: roleLower, pacientes: res.data });
+        } else if (roleLower === 'pesquisador') {
           const resEstat = await api.get('/patients/statistics/1');
           const resAmostra = await api.get('/patients/cohorts/1');
           setDadosDaVisao({ 
@@ -181,8 +182,9 @@ export default function Dashboard({ usuario, aoDeslogar }) {
     });
 
     let access_level = "FULL";
-    if (usuario.role === "estagiario") access_level = "PARTIAL";
-    if (usuario.role === "pesquisador") access_level = "ANONYMIZED";
+    const userRole = usuario.role?.toLowerCase();
+    if (userRole === "estagiario") access_level = "PARTIAL";
+    if (userRole === "pesquisador") access_level = "ANONYMIZED";
 
     try {
       const response = await api.post('/transform/transform-fhir', {

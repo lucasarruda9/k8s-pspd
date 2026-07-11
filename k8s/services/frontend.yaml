@@ -22,17 +22,17 @@ spec:
           image: artmendy/frontend:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: 5173
+            - containerPort: 80
           env:
             - name: NODE_ENV
               value: "production"
           resources:
             requests:
               cpu: "100m"
-              memory: "128Mi"
-            limits:
-              cpu: "300m"
               memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service
@@ -45,7 +45,7 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 5173
+      targetPort: 80
   type: LoadBalancer
 ---
 apiVersion: autoscaling/v2
