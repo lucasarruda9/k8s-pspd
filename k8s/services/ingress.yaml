@@ -24,7 +24,7 @@ spec:
               service:
                 name: jaeger
                 port:
-                  number: 4318
+                  number: 16686
           - path: /grupo4(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
