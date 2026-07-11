@@ -1,3 +1,5 @@
+import './tracer.js';
+
 import Fastify from 'fastify';
 import jwt from '@fastify/jwt';
 import cors from '@fastify/cors';
