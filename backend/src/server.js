@@ -11,6 +11,10 @@ import authRoutes from './routes/authRoutes.js';
 import patientRoutes from './routes/patientRoutes.js';
 import transformRoutes from './routes/transformRoutes.js';
 
+import { grpcClient } from './grpc/client.js';
+import { start as startAuth } from './services/authorization/server.js';
+import { start as startPatient } from './services/patientData/server.js';
+
 const fastify = Fastify({ logger: true });
 
 await fastify.register(cors);
@@ -27,8 +31,35 @@ await fastify.register(env, {
   dotenv: true
 });
 
+let publicKey = null;
+
+async function getPublicKey() {
+  if (publicKey) return publicKey;
+  try {
+    let realmRes;
+    try {
+      realmRes = await fetch('http://keycloak:8080/realms/pspd-realm');
+    } catch (err) {
+      realmRes = await fetch(`${process.env.KEYCLOAK_URL || 'http://localhost:8080'}/realms/pspd-realm`);
+    }
+    
+    if (realmRes && realmRes.ok) {
+      const realmData = await realmRes.json();
+      publicKey = `-----BEGIN PUBLIC KEY-----\n${realmData.public_key}\n-----END PUBLIC KEY-----`;
+      fastify.log.info("Chave pública do Keycloak obtida com sucesso.");
+      return publicKey;
+    }
+  } catch (e) {
+    fastify.log.warn("Falha ao buscar chave pública: " + e.message);
+  }
+  return fastify.config.JWT_SECRET;
+}
+
 await fastify.register(jwt, {
-  secret: fastify.config.JWT_SECRET
+  secret: async (request, token) => {
+    return await getPublicKey();
+  },
+  verify: { algorithms: ['RS256', 'HS256'] }
 });
 
 fastify.decorate("authenticate", async (request, reply) => {
@@ -38,6 +69,8 @@ fastify.decorate("authenticate", async (request, reply) => {
     reply.status(401).send({ message: "Token inválido ou ausente" });
   }
 });
+
+fastify.decorate("grpcClient", grpcClient);
 
 // Swagger 
 await fastify.register(swagger, {
@@ -62,6 +95,9 @@ await fastify.register(transformRoutes, { prefix: '/api/transform' });
 
 const start = async () => {
   try {
+    startAuth();
+    startPatient();
+    
     await fastify.listen({ port: fastify.config.PORT, host: '0.0.0.0' });
     fastify.log.info('Gateway rodando em http://localhost:3000');
     fastify.log.info('Documentação em http://localhost:3000/docs');

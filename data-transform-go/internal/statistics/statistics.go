@@ -118,7 +118,7 @@ func ageRanges(patients []*pb.DBPatient) []*pb.AgeRangeDistribution {
     for i, count := range ranges {
         res = append(res, &pb.AgeRangeDistribution{
             Range: count,
-            Percentage: float64(counts[i]) / total * 100,
+            Percentage: float32(float64(counts[i]) / total * 100),
         })
     }
     return res
@@ -135,7 +135,7 @@ func departmentFrequency(encounters []*pb.DBEncounter) []*pb.DepartmentFrequency
     for name, count := range freq {
         res = append(res, &pb.DepartmentFrequency{
             DepartmentName: name,
-            Percentage: float64(count) / total * 100,
+            Percentage: float32(float64(count) / total * 100),
         })
     }
     return res
@@ -144,7 +144,7 @@ func departmentFrequency(encounters []*pb.DBEncounter) []*pb.DepartmentFrequency
 func medicationFrequency(events []*pb.DBClinicalEvent) []*pb.MedicationFrequency {
     freq := make(map[string]int)
     for _, ev := range events {
-        if transform.EventKind(ev.GetTipoEvento()) == "medication" { // Verifique se esta função existe no seu transform
+        if strings.Contains(strings.ToLower(ev.GetTipoEvento()), "medica") { 
             freq[ev.GetCodigoTipoEvento()]++
         }
     }
