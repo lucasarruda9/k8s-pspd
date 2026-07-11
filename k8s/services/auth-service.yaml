@@ -16,21 +16,25 @@ spec:
         app: auth-service
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8081"
+        prometheus.io/port: "9101"
         prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: auth-service
-          image: artmendy/auth-service:latest
+          image: artmendy/api-gateway:latest
           imagePullPolicy: Always
+          command: ["npm", "run", "start:auth"]
           ports:
             - containerPort: 8081
+            - containerPort: 9101
           env:
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: pspd-secrets
                   key: jwt-secret
+            - name: AUTH_METRICS_PORT
+              value: "9101"
           resources:
             requests:
               cpu: "100m"

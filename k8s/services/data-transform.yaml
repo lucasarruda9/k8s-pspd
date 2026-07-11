@@ -16,7 +16,7 @@ spec:
         app: data-transform
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8083"
+        prometheus.io/port: "9103"
         prometheus.io/path: "/metrics"
     spec:
       containers:
@@ -25,6 +25,10 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8083
+            - containerPort: 9103
+          env:
+            - name: METRICS_PORT
+              value: "9103"
           resources:
             requests:
               cpu: "200m"

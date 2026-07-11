@@ -16,7 +16,7 @@ spec:
         app: api-gateway
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8000"
+        prometheus.io/port: "9100"
         prometheus.io/path: "/metrics"
     spec:
       containers:
@@ -25,12 +25,15 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
+            - containerPort: 9100
           env:
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: pspd-secrets
                   key: jwt-secret
+            - name: GATEWAY_METRICS_PORT
+              value: "9100"
             - name: AUTH_SERVICE_URL
               value: "http://auth-service:8081"
             - name: PATIENT_DATA_SERVICE_URL
@@ -54,8 +57,9 @@ spec:
   selector:
     app: api-gateway
   ports:
-    - protocol: TCP
-      port: 8000
+    - name: http
+      protocol: TCP
+      port: 80
       targetPort: 8000
   type: LoadBalancer
 ---
