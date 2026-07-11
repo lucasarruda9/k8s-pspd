@@ -1,5 +1,6 @@
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { SimpleSpanProcessor, ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { FetchInstrumentation } from '@opentelemetry/instrumentation-fetch';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
@@ -14,17 +15,24 @@ export const inicializarRastreamento = () => {
   if (window[INICIADO_CHAVE]) {
     return;
   }
-  //imprime os rastros no Console do Navegador
-  //troque para OTLPTraceExporter quando o Gateway com Jaeger estiver pronto
+
+  const OTLP_URL = import.meta.env.VITE_OTLP_COLLECTOR_URL;
+
+  const spanProcessors = OTLP_URL
+    ? [
+        new SimpleSpanProcessor(
+          new OTLPTraceExporter({ url: `${OTLP_URL}/v1/traces` })
+        ),
+      ]
+    : [new SimpleSpanProcessor(new ConsoleSpanExporter())];
+
   const provider = new WebTracerProvider({
     resource: resourceFromAttributes({
       [SEMRESATTRS_SERVICE_NAME]: 'frontend-react-app',
       [SEMRESATTRS_SERVICE_VERSION]: '0.0.0',
-      [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: 'development'
+      [SEMRESATTRS_DEPLOYMENT_ENVIRONMENT]: OTLP_URL ? 'production' : 'development',
     }),
-    spanProcessors: [
-      new SimpleSpanProcessor(new ConsoleSpanExporter())
-    ]
+    spanProcessors,
   });
 
   //inicia o contexto usando Zone.js para rastrear chamadas assíncronas no browser
@@ -43,7 +51,7 @@ export const inicializarRastreamento = () => {
   });
 
   window[INICIADO_CHAVE] = true;
-  console.log('OpenTelemetry Rastreamento Distribuído Iniciado!');
+  console.log(`OpenTelemetry iniciado → exportador: ${OTLP_URL ? 'Jaeger OTLP (' + OTLP_URL + ')' : 'Console (dev)'}`);
 };
 
 export const getTracer = () => {

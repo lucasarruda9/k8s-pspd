@@ -21,8 +21,8 @@ spec:
     spec:
       containers:
         - name: data-transform
-          image: pspd/data-transform:latest
-          imagePullPolicy: IfNotPresent
+          image: artmendy/data-transform:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8083
           resources:

@@ -1,9 +1,9 @@
 import Keycloak from 'keycloak-js';
 
 const keycloakConfig = {
-  url: 'http://localhost:8080',
-  realm: 'pspd-realm',
-  clientId: 'frontend-client'
+  url: import.meta.env.VITE_KEYCLOAK_URL || 'https://kiriland.unb.br/keycloak',
+  realm: import.meta.env.VITE_KEYCLOAK_REALM || 'grupo04',
+  clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'frontend-client'
 };
 
 const keycloak = new Keycloak(keycloakConfig);

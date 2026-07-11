@@ -21,11 +21,16 @@ spec:
     spec:
       containers:
         - name: patient-data
-          image: pspd/patient-data:latest
-          imagePullPolicy: IfNotPresent
+          image: artmendy/patient-data:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8082
           env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: pspd-secrets
+                  key: jwt-secret
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:

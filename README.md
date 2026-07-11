@@ -56,17 +56,20 @@ stringData:
 
 > Nunca commite esse arquivo com credenciais reais. Use `git update-index --assume-unchanged k8s/base/secrets.yaml` para impedir que o Git rastreie alteracoes locais.
 
-#### Deploy
+#### Deploy Oficial (Cluster da UnB)
 
-Execute os comandos abaixo em sequencia, no mesmo terminal:
+Execute os comandos abaixo na sequência:
 
 ```bash
 kubectl apply -f k8s/base/ --kubeconfig=.kube/kubeconfig-grupo-4.yaml
 kubectl apply -f k8s/services/ --kubeconfig=.kube/kubeconfig-grupo-4.yaml
-kubectl apply -f k8s/observability/ --kubeconfig=.kube/kubeconfig-grupo-4.yaml
 ```
 
-#### Verificacao
+> **Aviso:** As pastas `k8s/observability/` e `k8s/local-dev/` NÃO devem ser aplicadas no cluster da disciplina, pois o professor já fornece o Keycloak, Prometheus e Grafana centralizados.
+
+
+
+#### Verificação
 
 ```bash
 kubectl get pods -n grupo-4 --kubeconfig=.kube/kubeconfig-grupo-4.yaml
@@ -96,3 +99,4 @@ npm run dev
 |---|---|---|---|---|---|
 | 1.0 | Estrutura inicial do README | [João Pedro Cota](https://github.com/johnaopedro) | 10/07/2026 | [João Pedro Cota](https://github.com/johnaopedro) | 10/07/2026 |
 | 1.1 | Adiciona instrucoes de deploy Kubernetes | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 |
+| 1.2 | Refatora arquitetura para uso de OAUTH2 e Observabilidade centralizada | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 |
