@@ -8,6 +8,8 @@ import env from '@fastify/env';
 import authRoutes from './routes/authRoutes.js';
 import patientRoutes from './routes/patientRoutes.js';
 import transformRoutes from './routes/transformRoutes.js';
+import { clinicalProto, grpc } from './grpc/loader.js';
+import { config } from './config.js';
 
 const fastify = Fastify({ logger: true });
 
@@ -53,6 +55,28 @@ await fastify.register(swaggerUi, {
   uiConfig: { docExpansion: 'list' }
 });
 
+const authorizationClient = new clinicalProto.AuthorizationService(
+  `${config.authorization.host}:${config.authorization.port}`,
+  grpc.credentials.createInsecure()
+);
+const patientDataClient = new clinicalProto.PatientDataService(
+  `${config.patientData.host}:${config.patientData.port}`,
+  grpc.credentials.createInsecure()
+);
+const dataTransformClient = new clinicalProto.DataTransformService(
+  `${config.dataTransform.host}:${config.dataTransform.port}`,
+  grpc.credentials.createInsecure()
+);
+
+fastify.decorate('grpcClient', {
+  AuthorizeQuery: authorizationClient.AuthorizeQuery.bind(authorizationClient),
+  FetchPatients: patientDataClient.FetchPatients.bind(patientDataClient),
+  FetchClinicalEvents: patientDataClient.FetchClinicalEvents.bind(patientDataClient),
+  FetchEncounters: patientDataClient.FetchEncounters.bind(patientDataClient),
+  FetchCohortData: patientDataClient.FetchCohortData.bind(patientDataClient),
+  GetCohortStatistics: dataTransformClient.GetCohortStatistics.bind(dataTransformClient),
+  TransformToFHIR: dataTransformClient.TransformToFHIR.bind(dataTransformClient),
+});
 
 await fastify.register(authRoutes, { prefix: '/api/auth' });
 await fastify.register(patientRoutes, { prefix: '/api/patients' });
