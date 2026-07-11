@@ -19,7 +19,7 @@ const patientClient = new clinicalProto.PatientDataService(
 );
 
 const transformClient = new clinicalProto.DataTransformService(
-  process.env.DATA_TRANSFORM_HOST || 'data-transform:50053',
+  getHost('DATA_TRANSFORM_SERVICE_URL', process.env.DATA_TRANSFORM_HOST || 'data-transform:50053'),
   grpc.credentials.createInsecure()
 );
 

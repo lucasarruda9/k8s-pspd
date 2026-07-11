@@ -16,7 +16,7 @@ spec:
         app: patient-data
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8082"
+        prometheus.io/port: "9102"
         prometheus.io/path: "/metrics"
     spec:
       containers:
@@ -46,6 +46,8 @@ spec:
                 secretKeyRef:
                   name: pspd-secrets
                   key: postgres-db
+            - name: PATIENT_PORT
+              value: "8082"
             - name: POSTGRES_HOST
               valueFrom:
                 secretKeyRef:

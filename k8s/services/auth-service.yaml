@@ -16,7 +16,7 @@ spec:
         app: auth-service
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8081"
+        prometheus.io/port: "9101"
         prometheus.io/path: "/metrics"
     spec:
       containers:
@@ -31,6 +31,8 @@ spec:
                 secretKeyRef:
                   name: pspd-secrets
                   key: jwt-secret
+            - name: AUTH_PORT
+              value: "8081"
           resources:
             requests:
               cpu: "100m"

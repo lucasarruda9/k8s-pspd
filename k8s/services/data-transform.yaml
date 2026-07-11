@@ -16,7 +16,7 @@ spec:
         app: data-transform
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "8083"
+        prometheus.io/port: "9103"
         prometheus.io/path: "/metrics"
     spec:
       containers:
@@ -25,6 +25,11 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8083
+          env:
+            - name: TRANSFORM_PORT
+              value: "8083"
+            - name: PATIENT_DATA_ADDR
+              value: "patient-data:8082"
           resources:
             requests:
               cpu: "200m"

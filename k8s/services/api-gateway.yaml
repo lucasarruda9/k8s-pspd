@@ -15,9 +15,7 @@ spec:
       labels:
         app: api-gateway
       annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "8000"
-        prometheus.io/path: "/metrics"
+        description: "API Gateway Node.js"
     spec:
       containers:
         - name: api-gateway
@@ -41,6 +39,8 @@ spec:
               value: "https://kiriland.unb.br/keycloak"
             - name: KEYCLOAK_REALM
               value: "grupo04"
+            - name: PORT
+              value: "8000"
           resources:
             requests:
               cpu: "100m"

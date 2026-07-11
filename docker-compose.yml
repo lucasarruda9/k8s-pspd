@@ -9,6 +9,8 @@ services:
       - "5173:80"
     environment:
       - NODE_ENV=development
+    depends_on:
+      - api-gateway
 
   keycloak:
     image: quay.io/keycloak/keycloak:24.0.5
@@ -22,14 +24,15 @@ services:
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
 
-  backend:
+  api-gateway:
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3000:8000"
     environment:
       - NODE_ENV=development
+      - PORT=8000
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
       - POSTGRES_DB=${POSTGRES_DB}
@@ -52,7 +55,8 @@ services:
       - "50053:50053"
       - "9103:9103"
     environment:
-      - GRPC_PORT=50053
+      - TRANSFORM_PORT=50053
+      - PATIENT_DATA_ADDR=api-gateway:50052
       - METRICS_PORT=9103
 
   db:
