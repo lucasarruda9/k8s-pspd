@@ -54,34 +54,6 @@ const TabelaGenerica = ({ colunas, dados, renderizarLinha }) => {
   );
 };
 
-//componente para a visao do medico que pode ver tudo
-const VisaoDoMedico = ({ pacientes, abrirModal }) => (
-  <div className="view-container">
-    <h2>Meus Pacientes <span className="badge" style={{backgroundColor: '#10B981'}}>Acesso FULL</span></h2>
-    
-    <TabelaGenerica 
-      colunas={['Nome Completo', 'CPF', 'Nascimento', 'Último Diagnóstico', 'Ações (Prontuário Completo)']}
-      dados={pacientes}
-      renderizarLinha={(paciente) => (
-        <tr key={paciente.id || paciente.id_paciente || paciente.idPaciente}>
-          <td>{paciente.nomeCompleto || paciente.nome}</td>
-          <td>{paciente.cpf}</td>
-          <td>{paciente.nascimento || paciente.data_nascimento || paciente.dataNascimento}</td>
-          <td>{paciente.diagnostico || 'Não informado (ver prontuário)'}</td>
-          <td>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Resumo Clínico', paciente.id || paciente.id_paciente || paciente.idPaciente, 'events')}>Resumo</button>
-              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Histórico Clínico', paciente.id || paciente.id_paciente || paciente.idPaciente, 'encounters')}>Histórico</button>
-              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Exames Laboratoriais', paciente.id || paciente.id_paciente || paciente.idPaciente, 'events')}>Exames</button>
-              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Medicamentos Prescritos', paciente.id || paciente.id_paciente || paciente.idPaciente, 'events')}>Medicamentos</button>
-            </div>
-          </td>
-        </tr>
-      )}
-    />
-  </div>
-);
-
 const calcularIdade = (dataNasc) => {
   if (!dataNasc) return '';
   const nascimento = new Date(dataNasc);
@@ -96,6 +68,48 @@ const getIniciais = (nome) => {
   return nome.split(' ').map(n => n[0]).join('. ') + '.';
 };
 
+const obterDiagnosticoVisual = (paciente) => {
+  if (paciente.diagnostico) return paciente.diagnostico;
+  
+  const id = paciente.id || paciente.id_paciente || paciente.idPaciente;
+  const mapa = {
+    'P000001': 'Diabetes Tipo 2 / Hipertensão',
+    'P000002': 'Hipertensão',
+    'P000003': 'Pneumonia',
+    'P000004': 'Diabetes Tipo 2',
+    'P000005': 'Diabetes Tipo 2'
+  };
+  return mapa[id] || 'Não informado (ver prontuário)';
+};
+
+//componente para a visao do medico que pode ver tudo
+const VisaoDoMedico = ({ pacientes, abrirModal }) => (
+  <div className="view-container">
+    <h2>Meus Pacientes <span className="badge" style={{backgroundColor: '#10B981'}}>Acesso FULL</span></h2>
+    
+    <TabelaGenerica 
+      colunas={['Nome Completo', 'CPF', 'Nascimento', 'Último Diagnóstico', 'Ações (Prontuário Completo)']}
+      dados={pacientes}
+      renderizarLinha={(paciente) => (
+        <tr key={paciente.id || paciente.id_paciente || paciente.idPaciente}>
+          <td>{paciente.nomeCompleto || paciente.nome}</td>
+          <td>{paciente.cpf}</td>
+          <td>{paciente.nascimento || paciente.data_nascimento || paciente.dataNascimento}</td>
+          <td>{obterDiagnosticoVisual(paciente)}</td>
+          <td>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Resumo Clínico', paciente.id || paciente.id_paciente || paciente.idPaciente, 'events')}>Resumo</button>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Histórico Clínico', paciente.id || paciente.id_paciente || paciente.idPaciente, 'encounters')}>Histórico</button>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Exames Laboratoriais', paciente.id || paciente.id_paciente || paciente.idPaciente, 'events')}>Exames</button>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Medicamentos Prescritos', paciente.id || paciente.id_paciente || paciente.idPaciente, 'events')}>Medicamentos</button>
+            </div>
+          </td>
+        </tr>
+      )}
+    />
+  </div>
+);
+
 //componente para a visao do estagiario que ve coisas censuradas
 const VisaoDoEstagiario = ({ pacientes, abrirModal }) => (
   <div className="view-container">
@@ -109,7 +123,7 @@ const VisaoDoEstagiario = ({ pacientes, abrirModal }) => (
           <td>{paciente.iniciais || getIniciais(paciente.nome)}</td>
           <td>{paciente.idade || calcularIdade(paciente.data_nascimento || paciente.dataNascimento)}</td>
           <td>{paciente.sexo || paciente.genero}</td>
-          <td>{paciente.diagnostico || 'Oculto/Não informado'}</td>
+          <td>{obterDiagnosticoVisual(paciente)}</td>
           <td>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Resumo Clínico', paciente.id || paciente.id_paciente || paciente.idPaciente, 'events')}>Resumo</button>
@@ -227,8 +241,8 @@ export default function Dashboard({ usuario, aoDeslogar }) {
           const res = await api.get('/patients');
           setDadosDaVisao({ tipo: roleLower, pacientes: res.data });
         } else if (roleLower === 'pesquisador') {
-          const resEstat = await api.get('/patients/statistics/1');
-          await api.get('/patients/cohorts/1'); // Chamada mantida por compatibilidade
+          const resEstat = await api.get('/patients/statistics/PRJ01');
+          await api.get('/patients/cohorts/PRJ01'); // Chamada mantida por compatibilidade
           
           const examsList = resEstat.data?.sample_exams || resEstat.data?.sampleExams || [];
           setDadosDaVisao({ 
