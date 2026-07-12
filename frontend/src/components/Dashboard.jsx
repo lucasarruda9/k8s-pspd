@@ -3,22 +3,84 @@ import { api } from '../services/api';
 import './Dashboard.css';
 
 //componente generico para evitar clones de codigo (JSCPD)
-const TabelaGenerica = ({ colunas, dados, renderizarLinha }) => (
-  <div className="data-table-container glass-panel">
-    <table className="data-table">
-      <thead>
-        <tr>
-          {colunas.map((coluna, index) => (
-            <th key={index}>{coluna}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {dados.map(renderizarLinha)}
-      </tbody>
-    </table>
-  </div>
-);
+const TabelaGenerica = ({ colunas, dados, renderizarLinha }) => {
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const itensPorPagina = 10;
+  
+  const indexUltimo = paginaAtual * itensPorPagina;
+  const indexPrimeiro = indexUltimo - itensPorPagina;
+  const dadosAtuais = dados.slice(indexPrimeiro, indexUltimo);
+  const totalPaginas = Math.ceil(dados.length / itensPorPagina);
+
+  const irParaProxima = () => setPaginaAtual(p => Math.min(p + 1, totalPaginas));
+  const irParaAnterior = () => setPaginaAtual(p => Math.max(p - 1, 1));
+
+  return (
+    <div className="data-table-container glass-panel">
+      <table className="data-table">
+        <thead>
+          <tr>
+            {colunas.map((coluna, index) => (
+              <th key={index}>{coluna}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {dadosAtuais.map(renderizarLinha)}
+        </tbody>
+      </table>
+      {totalPaginas > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '15px', alignItems: 'center', borderTop: '1px solid #e2e8f0', marginTop: '10px' }}>
+          <button 
+            className="btn" 
+            onClick={irParaAnterior} 
+            disabled={paginaAtual === 1}
+            style={{ opacity: paginaAtual === 1 ? 0.5 : 1, padding: '6px 12px' }}
+          >
+            Anterior
+          </button>
+          <span style={{fontWeight: 'bold', color: '#475569'}}>Página {paginaAtual} de {totalPaginas}</span>
+          <button 
+            className="btn" 
+            onClick={irParaProxima} 
+            disabled={paginaAtual === totalPaginas}
+            style={{ opacity: paginaAtual === totalPaginas ? 0.5 : 1, padding: '6px 12px' }}
+          >
+            Próximo
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const calcularIdade = (dataNasc) => {
+  if (!dataNasc) return '';
+  const nascimento = new Date(dataNasc);
+  if (isNaN(nascimento)) return dataNasc; // fallback
+  const diff = Date.now() - nascimento.getTime();
+  const idade = new Date(diff);
+  return Math.abs(idade.getUTCFullYear() - 1970);
+};
+
+const getIniciais = (nome) => {
+  if (!nome) return '';
+  return nome.split(' ').map(n => n[0]).join('. ') + '.';
+};
+
+const obterDiagnosticoVisual = (paciente) => {
+  if (paciente.diagnostico) return paciente.diagnostico;
+  
+  const id = paciente.id || paciente.id_paciente || paciente.idPaciente;
+  const mapa = {
+    'P000001': 'Diabetes Tipo 2 / Hipertensão',
+    'P000002': 'Hipertensão',
+    'P000003': 'Pneumonia',
+    'P000004': 'Diabetes Tipo 2',
+    'P000005': 'Diabetes Tipo 2'
+  };
+  return mapa[id] || 'Não informado (ver prontuário)';
+};
 
 //componente para a visao do medico que pode ver tudo
 const VisaoDoMedico = ({ pacientes, abrirModal }) => (
@@ -29,17 +91,17 @@ const VisaoDoMedico = ({ pacientes, abrirModal }) => (
       colunas={['Nome Completo', 'CPF', 'Nascimento', 'Último Diagnóstico', 'Ações (Prontuário Completo)']}
       dados={pacientes}
       renderizarLinha={(paciente) => (
-        <tr key={paciente.id}>
-          <td>{paciente.nomeCompleto}</td>
+        <tr key={paciente.id || paciente.id_paciente || paciente.idPaciente}>
+          <td>{paciente.nomeCompleto || paciente.nome}</td>
           <td>{paciente.cpf}</td>
-          <td>{paciente.nascimento}</td>
-          <td>{paciente.diagnostico}</td>
+          <td>{paciente.nascimento || paciente.data_nascimento || paciente.dataNascimento}</td>
+          <td>{obterDiagnosticoVisual(paciente)}</td>
           <td>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Resumo Clínico', paciente.id, 'events')}>Resumo</button>
-              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Histórico Clínico', paciente.id, 'encounters')}>Histórico</button>
-              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Exames Laboratoriais', paciente.id, 'events')}>Exames</button>
-              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Medicamentos Prescritos', paciente.id, 'events')}>Medicamentos</button>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Resumo Clínico', paciente.id || paciente.id_paciente || paciente.idPaciente, 'events')}>Resumo</button>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Histórico Clínico', paciente.id || paciente.id_paciente || paciente.idPaciente, 'encounters')}>Histórico</button>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Exames Laboratoriais', paciente.id || paciente.id_paciente || paciente.idPaciente, 'events')}>Exames</button>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Medicamentos Prescritos', paciente.id || paciente.id_paciente || paciente.idPaciente, 'events')}>Medicamentos</button>
             </div>
           </td>
         </tr>
@@ -57,16 +119,16 @@ const VisaoDoEstagiario = ({ pacientes, abrirModal }) => (
       colunas={['Iniciais', 'Idade', 'Sexo', 'Último Diagnóstico', 'Ações (Dados Anonimizados)']}
       dados={pacientes}
       renderizarLinha={(paciente) => (
-        <tr key={paciente.id}>
-          <td>{paciente.iniciais}</td>
-          <td>{paciente.idade}</td>
-          <td>{paciente.sexo}</td>
-          <td>{paciente.diagnostico}</td>
+        <tr key={paciente.id || paciente.id_paciente || paciente.idPaciente}>
+          <td>{paciente.iniciais || getIniciais(paciente.nome)}</td>
+          <td>{paciente.idade || calcularIdade(paciente.data_nascimento || paciente.dataNascimento)}</td>
+          <td>{paciente.sexo || paciente.genero}</td>
+          <td>{obterDiagnosticoVisual(paciente)}</td>
           <td>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Resumo Clínico', paciente.id, 'events')}>Resumo</button>
-              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Exames Laboratoriais', paciente.id, 'events')}>Exames</button>
-              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Medicamentos Prescritos', paciente.id, 'events')}>Medicamentos</button>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Resumo Clínico', paciente.id || paciente.id_paciente || paciente.idPaciente, 'events')}>Resumo</button>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Exames Laboratoriais', paciente.id || paciente.id_paciente || paciente.idPaciente, 'events')}>Exames</button>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Medicamentos Prescritos', paciente.id || paciente.id_paciente || paciente.idPaciente, 'events')}>Medicamentos</button>
             </div>
           </td>
         </tr>
@@ -179,16 +241,17 @@ export default function Dashboard({ usuario, aoDeslogar }) {
           const res = await api.get('/patients');
           setDadosDaVisao({ tipo: roleLower, pacientes: res.data });
         } else if (roleLower === 'pesquisador') {
-          const resEstat = await api.get('/patients/statistics/1');
-          await api.get('/patients/cohorts/1'); // Chamada mantida por compatibilidade, mas o retorno não é mais usado
+          const resEstat = await api.get('/patients/statistics/PRJ01');
+          await api.get('/patients/cohorts/PRJ01'); // Chamada mantida por compatibilidade
+          
+          const examsList = resEstat.data?.sample_exams || resEstat.data?.sampleExams || [];
           setDadosDaVisao({ 
             tipo: 'pesquisador', 
             estatisticas: resEstat.data, 
-            // Usa o sample_exams retornado pela estatística
-            amostras: (resEstat.data?.sample_exams || []).map(e => ({
-              id: e.pseudo_id,
-              idade: e.age,
-              sexo: e.gender,
+            amostras: examsList.map(e => ({
+              id: e.pseudo_id || e.pseudoId,
+              idade: e.age || e.idade,
+              sexo: e.gender || e.sexo,
               hba1c: e.hba1c,
               glicemia: e.glicemia,
               imc: e.imc

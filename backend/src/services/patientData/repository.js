@@ -2,9 +2,9 @@ import { query } from '../../db/pool.js';
 import { queries } from '../../db/queries.js';
 
 const CONDICAO_DO_PROJETO = `
-  SELECT codigo_condicao
+  SELECT target_condition_code AS codigo_condicao
   FROM projects
-  WHERE id_projeto = $1`;
+  WHERE project_id = $1`;
 
 const asText = (v) => (v === null || v === undefined ? '' : String(v));
 const asDate = (v) => (v instanceof Date ? v.toISOString().slice(0, 10) : asText(v));
@@ -60,13 +60,13 @@ export async function findClinicalEvents(patientId) {
 }
 
 const ATENDIMENTOS_DA_COORTE = `
-  SELECT e.id_atendimento, e.id_paciente, e.data_inicio, e.data_fim,
-         e.tipo_atendimento, e.setor
+  SELECT e.encounter_id AS id_atendimento, e.patient_id AS id_paciente, e.start_date AS data_inicio, e.end_date AS data_fim,
+         e.encounter_type AS tipo_atendimento, e.department AS setor
   FROM encounters e
-  WHERE e.id_paciente IN (
-    SELECT DISTINCT ce.id_paciente
+  WHERE e.patient_id IN (
+    SELECT DISTINCT ce.patient_id
     FROM clinical_events ce
-    WHERE ce.tipo_evento = 'CONDICAO' AND ce.codigo_evento = $1
+    WHERE ce.event_type = 'CONDITION' AND ce.code = $1
   )`;
 
 export async function findCohortData(projectId) {

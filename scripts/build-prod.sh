@@ -34,7 +34,7 @@ docker build \
   --build-arg VITE_KEYCLOAK_CLIENT_ID=frontend-client \
   --tag "${FRONTEND_IMAGE}" \
   "${ROOT_DIR}/frontend"
-echo "    ✅ ${FRONTEND_IMAGE}"
+echo "    ${FRONTEND_IMAGE}"
 
 echo ""
 echo ">>> [2/2] Build do backend..."
@@ -42,7 +42,7 @@ docker build \
   --file "${ROOT_DIR}/backend/Dockerfile" \
   --tag "${BACKEND_IMAGE}" \
   "${ROOT_DIR}"
-echo "    ✅ ${BACKEND_IMAGE}"
+echo "    ${BACKEND_IMAGE}"
 echo ""
 
 if [ "${DO_PUSH}" = "true" ]; then

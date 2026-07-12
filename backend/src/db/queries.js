@@ -1,117 +1,95 @@
-/**
- * Catálogo de consultas SQL do banco PatientData.
- */
-
 export const queries = {
-
-  // ===== Authorization Service =====
-
-  /** $1 = username do médico, $2 = id_paciente. 1 linha => ALLOW+FULL. */
   medicoPodeAcessarPaciente: `
     SELECT 1
     FROM user_patient_assignments
-    WHERE username = $1 AND id_paciente = $2
-      AND tipo_vinculo = 'MEDICO' AND status = 'ATIVO'`,
+    WHERE username = $1 AND patient_id = $2
+      AND assignment_type = 'ATTENDING' AND active = true`,
 
-  /** $1 = username do estagiário, $2 = id_paciente. 1 linha => ALLOW+PARTIAL. */
   estagiarioPodeAcessarPaciente: `
     SELECT supervisor_username
     FROM user_patient_assignments
-    WHERE username = $1 AND id_paciente = $2
-      AND tipo_vinculo = 'ESTAGIARIO' AND status = 'ATIVO'`,
+    WHERE username = $1 AND patient_id = $2
+      AND assignment_type = 'TRAINEE' AND active = true`,
 
-  /** $1 = username do pesquisador, $2 = id_projeto. 1 linha => ALLOW. */
   pesquisadorPodeAcessarProjeto: `
-    SELECT codigo_condicao
+    SELECT target_condition_code AS codigo_condicao
     FROM projects
-    WHERE id_projeto = $2 AND username_pesquisador = $1
-      AND status = 'APROVADO' AND data_validade >= CURRENT_DATE`,
+    WHERE project_id = $2 AND researcher_username = $1
+      AND status = 'APPROVED' AND valid_until >= CURRENT_DATE`,
 
-  // ===== Patient Data Service =====
-
-  /** $1 = username do cuidador (médico ou estagiário). */
   pacientesDoCuidador: `
-    SELECT p.id_paciente, p.nome, p.data_nascimento, p.genero,
-           p.cidade, p.estado, p.cpf, p.cns
+    SELECT p.patient_id AS id_paciente, p.full_name AS nome, p.birth_date AS data_nascimento, p.gender AS genero,
+           p.city AS cidade, p.state AS estado, p.cpf, p.cns
     FROM user_patient_assignments upa
-    JOIN patients p USING (id_paciente)
-    WHERE upa.username = $1 AND upa.status = 'ATIVO'
-    ORDER BY p.nome`,
+    JOIN patients p ON upa.patient_id = p.patient_id
+    WHERE upa.username = $1 AND upa.active = true
+    ORDER BY p.full_name`,
 
-  /** $1 = username, $2 = id_paciente. */
   pacienteDoCuidador: `
-    SELECT p.id_paciente, p.nome, p.data_nascimento, p.genero,
-           p.cidade, p.estado, p.cpf, p.cns
+    SELECT p.patient_id AS id_paciente, p.full_name AS nome, p.birth_date AS data_nascimento, p.gender AS genero,
+           p.city AS cidade, p.state AS estado, p.cpf, p.cns
     FROM user_patient_assignments upa
-    JOIN patients p USING (id_paciente)
-    WHERE upa.username = $1 AND upa.id_paciente = $2 AND upa.status = 'ATIVO'`,
+    JOIN patients p ON upa.patient_id = p.patient_id
+    WHERE upa.username = $1 AND upa.patient_id = $2 AND upa.active = true`,
 
-  /** $1 = id_paciente. */
   atendimentosDoPaciente: `
-    SELECT id_atendimento, id_paciente, data_inicio, data_fim,
-           tipo_atendimento, setor
+    SELECT encounter_id AS id_atendimento, patient_id AS id_paciente, start_date AS data_inicio, end_date AS data_fim,
+           encounter_type AS tipo_atendimento, department AS setor
     FROM encounters
-    WHERE id_paciente = $1
-    ORDER BY data_inicio DESC`,
+    WHERE patient_id = $1
+    ORDER BY start_date DESC`,
 
-  /** $1 = id_paciente. */
   eventosClinicosDoPaciente: `
-    SELECT id_evento, id_paciente, id_atendimento, tipo_evento,
-           codigo_evento, descricao_evento, data_evento, valor, unidade_valor
+    SELECT event_id AS id_evento, patient_id AS id_paciente, encounter_id AS id_atendimento, event_type AS tipo_evento,
+           code AS codigo_evento, description AS descricao_evento, event_date AS data_evento, value AS valor, unit AS unidade_valor
     FROM clinical_events
-    WHERE id_paciente = $1
-    ORDER BY data_evento DESC`,
+    WHERE patient_id = $1
+    ORDER BY event_date DESC`,
 
-  /** $1 = codigo_condicao. Pacientes da coorte. */
   pacientesDaCoorte: `
-    SELECT DISTINCT p.id_paciente, p.nome, p.data_nascimento, p.genero,
-           p.cidade, p.estado, p.cpf, p.cns
+    SELECT DISTINCT p.patient_id AS id_paciente, p.full_name AS nome, p.birth_date AS data_nascimento, p.gender AS genero,
+           p.city AS cidade, p.state AS estado, p.cpf, p.cns
     FROM clinical_events ce
-    JOIN patients p USING (id_paciente)
-    WHERE ce.tipo_evento = 'CONDICAO' AND ce.codigo_evento = $1`,
+    JOIN patients p ON ce.patient_id = p.patient_id
+    WHERE ce.event_type = 'CONDITION' AND ce.code = $1`,
 
-  /** $1 = codigo_condicao. Exames e medicações dos pacientes da coorte. */
   eventosDaCoorte: `
-    SELECT ce.id_evento, ce.id_paciente, ce.id_atendimento, ce.tipo_evento,
-           ce.codigo_evento, ce.descricao_evento, ce.data_evento,
-           ce.valor, ce.unidade_valor
+    SELECT ce.event_id AS id_evento, ce.patient_id AS id_paciente, ce.encounter_id AS id_atendimento, ce.event_type AS tipo_evento,
+           ce.code AS codigo_evento, ce.description AS descricao_evento, ce.event_date AS data_evento,
+           ce.value AS valor, ce.unit AS unidade_valor
     FROM clinical_events ce
-    WHERE ce.tipo_evento IN ('OBSERVACAO', 'MEDICACAO')
+    WHERE ce.event_type IN ('OBSERVATION', 'MEDICATION')
       AND EXISTS (
           SELECT 1 FROM clinical_events cond
-          WHERE cond.id_paciente = ce.id_paciente
-            AND cond.tipo_evento = 'CONDICAO'
-            AND cond.codigo_evento = $1)`,
+          WHERE cond.patient_id = ce.patient_id
+            AND cond.event_type = 'CONDITION'
+            AND cond.code = $1)`,
 
-  /** $1 = username do pesquisador. */
   projetosDoPesquisador: `
-    SELECT id_projeto, titulo, codigo_condicao, status, data_validade
+    SELECT project_id AS id_projeto, title AS titulo, target_condition_code AS codigo_condicao, status, valid_until AS data_validade
     FROM projects
-    WHERE username_pesquisador = $1
-    ORDER BY id_projeto`,
+    WHERE researcher_username = $1
+    ORDER BY project_id`,
 
-  // ===== Data Transform Service =====
-  /** $1 = codigo_condicao. Total, distribuição por sexo e média de idade. */
   estatisticasDaCoorte: `
     WITH coorte AS (
-        SELECT DISTINCT ce.id_paciente
+        SELECT DISTINCT ce.patient_id
         FROM clinical_events ce
-        WHERE ce.tipo_evento = 'CONDICAO' AND ce.codigo_evento = $1
+        WHERE ce.event_type = 'CONDITION' AND ce.code = $1
     )
     SELECT
         count(*) AS total_pacientes,
-        round(100.0 * count(*) FILTER (WHERE p.genero = 'female') / count(*), 1) AS pct_feminino,
-        round(100.0 * count(*) FILTER (WHERE p.genero = 'male') / count(*), 1)   AS pct_masculino,
-        round(avg(extract(year FROM age(p.data_nascimento)))::numeric, 1)        AS media_idade
+        round(100.0 * count(*) FILTER (WHERE p.gender = 'female') / count(*), 1) AS pct_feminino,
+        round(100.0 * count(*) FILTER (WHERE p.gender = 'male') / count(*), 1)   AS pct_masculino,
+        round(avg(extract(year FROM age(p.birth_date)))::numeric, 1)             AS media_idade
     FROM coorte
-    JOIN patients p USING (id_paciente)`,
+    JOIN patients p USING (patient_id)`,
 
-  /** $1 = codigo_condicao. Distribuição por faixa etária. */
   faixasEtariasDaCoorte: `
     WITH coorte AS (
-        SELECT DISTINCT ce.id_paciente
+        SELECT DISTINCT ce.patient_id
         FROM clinical_events ce
-        WHERE ce.tipo_evento = 'CONDICAO' AND ce.codigo_evento = $1
+        WHERE ce.event_type = 'CONDITION' AND ce.code = $1
     )
     SELECT
         CASE
@@ -124,87 +102,79 @@ export const queries = {
         count(*) AS total,
         round(100.0 * count(*) / sum(count(*)) OVER (), 1) AS percentual
     FROM (
-        SELECT extract(year FROM age(p.data_nascimento))::int AS idade
-        FROM coorte JOIN patients p USING (id_paciente)
+        SELECT extract(year FROM age(p.birth_date))::int AS idade
+        FROM coorte JOIN patients p USING (patient_id)
     ) x
     GROUP BY 1
     ORDER BY 1`,
 
-  /**
-   * $1 = codigo_condicao, $2 = codigo do exame (ex: 'HBA1C').
-   * Média, mediana e extremos de um exame na coorte
-   * (ex: média da hemoglobina glicada dos diabéticos).
-   */
   mediaExameDaCoorte: `
     WITH coorte AS (
-        SELECT DISTINCT ce.id_paciente
+        SELECT DISTINCT ce.patient_id
         FROM clinical_events ce
-        WHERE ce.tipo_evento = 'CONDICAO' AND ce.codigo_evento = $1
+        WHERE ce.event_type = 'CONDITION' AND ce.code = $1
     )
     SELECT
         count(*) AS total_medicoes,
-        round(avg(ce.valor), 2) AS media,
-        round(percentile_cont(0.5) WITHIN GROUP (ORDER BY ce.valor)::numeric, 2) AS mediana,
-        min(ce.valor) AS minimo,
-        max(ce.valor) AS maximo
+        round(avg(ce.value), 2) AS media,
+        round(percentile_cont(0.5) WITHIN GROUP (ORDER BY ce.value)::numeric, 2) AS mediana,
+        min(ce.value) AS minimo,
+        max(ce.value) AS maximo
     FROM clinical_events ce
-    JOIN coorte USING (id_paciente)
-    WHERE ce.tipo_evento = 'OBSERVACAO' AND ce.codigo_evento = $2`,
+    JOIN coorte USING (patient_id)
+    WHERE ce.event_type = 'OBSERVATION' AND ce.code = $2`,
 
-  /** $1 = codigo_condicao. Departamentos mais usados pela coorte. */
   departamentosDaCoorte: `
     WITH coorte AS (
-        SELECT DISTINCT ce.id_paciente
+        SELECT DISTINCT ce.patient_id
         FROM clinical_events ce
-        WHERE ce.tipo_evento = 'CONDICAO' AND ce.codigo_evento = $1
+        WHERE ce.event_type = 'CONDITION' AND ce.code = $1
     )
-    SELECT e.setor, count(*) AS atendimentos,
+    SELECT e.department AS setor, count(*) AS atendimentos,
            round(100.0 * count(*) / sum(count(*)) OVER (), 1) AS percentual
     FROM encounters e
-    JOIN coorte USING (id_paciente)
-    GROUP BY e.setor
+    JOIN coorte USING (patient_id)
+    GROUP BY e.department
     ORDER BY atendimentos DESC`,
 
-  /** $1 = codigo_condicao. Frequência de medicamentos na coorte. */
   medicamentosDaCoorte: `
     WITH coorte AS (
-        SELECT DISTINCT ce.id_paciente
+        SELECT DISTINCT ce.patient_id
         FROM clinical_events ce
-        WHERE ce.tipo_evento = 'CONDICAO' AND ce.codigo_evento = $1
+        WHERE ce.event_type = 'CONDITION' AND ce.code = $1
     )
-    SELECT ce.codigo_evento AS medicamento,
-           count(DISTINCT ce.id_paciente) AS pacientes_em_uso
+    SELECT ce.code AS medicamento,
+           count(DISTINCT ce.patient_id) AS pacientes_em_uso
     FROM clinical_events ce
-    JOIN coorte USING (id_paciente)
-    WHERE ce.tipo_evento = 'MEDICACAO'
-    GROUP BY ce.codigo_evento
+    JOIN coorte USING (patient_id)
+    WHERE ce.event_type = 'MEDICATION'
+    GROUP BY ce.code
     ORDER BY pacientes_em_uso DESC`,
 
-  /** $1 = codigo_condicao. Exames anonimizados (pseudo_id, sexo, idade, exames). */
   examesAnonimizadosDaCoorte: `
     WITH coorte AS (
-        SELECT DISTINCT ce.id_paciente
+        SELECT DISTINCT ce.patient_id
         FROM clinical_events ce
-        WHERE ce.tipo_evento = 'CONDICAO' AND ce.codigo_evento = $1
+        WHERE ce.event_type = 'CONDITION' AND ce.code = $1
     ),
     ultimo_exame AS (
-        SELECT DISTINCT ON (ce.id_paciente, ce.codigo_evento)
-               ce.id_paciente, ce.codigo_evento, ce.valor
+        SELECT DISTINCT ON (ce.patient_id, ce.code)
+               ce.patient_id, ce.code, ce.value
         FROM clinical_events ce
-        JOIN coorte USING (id_paciente)
-        WHERE ce.tipo_evento = 'OBSERVACAO'
-        ORDER BY ce.id_paciente, ce.codigo_evento, ce.data_evento DESC
+        JOIN coorte USING (patient_id)
+        WHERE ce.event_type = 'OBSERVATION'
+        ORDER BY ce.patient_id, ce.code, ce.event_date DESC
     )
     SELECT
-        'hash' || substr(md5(p.id_paciente || 'pspd-salt'), 1, 8)  AS pseudo_id,
-        CASE p.genero WHEN 'female' THEN 'F' ELSE 'M' END          AS sexo,
-        extract(year FROM age(p.data_nascimento))::int             AS idade,
-        max(ue.valor) FILTER (WHERE ue.codigo_evento = 'HBA1C')    AS hba1c,
-        max(ue.valor) FILTER (WHERE ue.codigo_evento = 'GLICEMIA') AS glicemia,
-        max(ue.valor) FILTER (WHERE ue.codigo_evento = 'IMC')      AS imc
+        'hash' || substr(md5(p.patient_id || 'pspd-salt'), 1, 8)  AS pseudo_id,
+        CASE p.gender WHEN 'female' THEN 'F' ELSE 'M' END          AS sexo,
+        extract(year FROM age(p.birth_date))::int                  AS idade,
+        max(ue.value) FILTER (WHERE ue.code = 'HBA1C')             AS hba1c,
+        max(ue.value) FILTER (WHERE ue.code = 'GLICEMIA')          AS glicemia,
+        max(ue.value) FILTER (WHERE ue.code = 'IMC')               AS imc
     FROM coorte c
-    JOIN patients p USING (id_paciente)
-    LEFT JOIN ultimo_exame ue USING (id_paciente)
-    GROUP BY p.id_paciente, p.genero, p.data_nascimento
+    JOIN patients p USING (patient_id)
+    LEFT JOIN ultimo_exame ue USING (patient_id)
+    GROUP BY p.patient_id, p.gender, p.birth_date
     ORDER BY pseudo_id`,
 };

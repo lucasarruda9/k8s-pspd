@@ -30,6 +30,7 @@ export default async function keycloakAuthRoutes(fastify, opts) {
         method:  'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body:    tokenBody.toString(),
+        signal:  AbortSignal.timeout(60000)
       });
 
       if (!tokenRes.ok) {
@@ -51,6 +52,7 @@ export default async function keycloakAuthRoutes(fastify, opts) {
     try {
       const infoRes = await fetch(userInfoUrl, {
         headers: { Authorization: `Bearer ${accessToken}` },
+        signal:  AbortSignal.timeout(60000)
       });
 
       if (!infoRes.ok) throw new Error(`/userinfo retornou ${infoRes.status}`);
