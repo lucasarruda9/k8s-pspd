@@ -22,7 +22,7 @@ import (
 )
 
 type cohortFetcher interface {
-	FetchCohort(ctx context.Context, projectID string) ([]*pb.DBPatient, []*pb.DBClinicalEvent, error)
+	FetchCohort(ctx context.Context, projectID string) (*patientdata.Cohort, error)
 }
 
 type server struct {
@@ -56,13 +56,14 @@ func (s *server) TransformToFHIR(_ context.Context, req *pb.TransformRequest) (*
 }
 
 func (s *server) GetCohortStatistics(ctx context.Context, req *pb.StatisticsRequest) (*pb.StatisticsResponse, error) {
-	patients, events, err := s.cohorts.FetchCohort(ctx, req.GetProjectId())
+	cohort, err := s.cohorts.FetchCohort(ctx, req.GetProjectId())
 	if err != nil {
 		return nil, status.Errorf(codes.Unavailable,
 			"falha ao buscar coorte no PatientDataService: %v", err)
 	}
-	resp := statistics.Build(patients, events)
-	log.Printf("GetCohortStatistics: project=%s total_patients=%d", req.GetProjectId(), resp.TotalPatients)
+	resp := statistics.Build(cohort.Patients, cohort.Encounters, cohort.Events)
+	log.Printf("GetCohortStatistics: project=%s total_patients=%d departments=%d medications=%d",
+		req.GetProjectId(), resp.TotalPatients, len(resp.Departments), len(resp.Medications))
 	return resp, nil
 }
 

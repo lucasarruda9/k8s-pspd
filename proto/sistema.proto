@@ -104,6 +104,7 @@ message CohortQueryResponse {
   string condition_code = 1;
   repeated DBPatient patients = 2;
   repeated DBClinicalEvent relevant_events = 3;
+  repeated DBEncounter encounters = 4;  
 }
 
 message TransformRequest {
