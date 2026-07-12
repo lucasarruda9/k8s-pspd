@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getTracer } from '../services/telemetry';
-import { doLogin, isMockMode } from '../services/keycloak';
+import { isMockMode } from '../services/keycloak';
 import { mockLogin } from '../services/mockAuth';
+import { keycloakLogin } from '../services/keycloakAuth';
 import './Login.css';
 
 // mock (sem Keycloak)
@@ -90,24 +91,35 @@ function MockLoginForm() {
 }
 
 function KeycloakLoginForm() {
+  const navegar = useNavigate();
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState('');
 
-  const lidarComEnvio = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!username.trim() || !password.trim()) {
+      setErro('Informe o usuário e a senha.');
+      return;
+    }
+    setCarregando(true);
     setErro('');
-
     const tracer = getTracer();
-    tracer.startActiveSpan('user_login_click', (span) => {
+    tracer.startActiveSpan('user_login_click', async (span) => {
       span.setAttribute('event.action', 'login_button_clicked');
       try {
-        doLogin();
-        span.setStatus({ code: 1 }); // 1 = OK no OpenTelemetry
-      } catch (erro) {
-        span.recordException(erro);
-        span.setStatus({ code: 2, message: erro.message }); // 2 = ERROR no OpenTelemetry
-        setErro('Falha ao redirecionar para o Keycloak');
+        await keycloakLogin(username.trim(), password.trim());
+        span.setStatus({ code: 1 });
+        navegar('/dashboard');
+        window.location.href = '/dashboard';
+      } catch (err) {
+        span.recordException(err);
+        span.setStatus({ code: 2, message: err.message });
+        setErro(err.message || 'Falha ao autenticar no Keycloak.');
       } finally {
         span.end();
+        setCarregando(false);
       }
     });
   };
@@ -121,11 +133,34 @@ function KeycloakLoginForm() {
           <p>Acesso restrito via provedor de identidade.</p>
         </div>
 
-        {erro && <div className="error-message" role="alert" style={{ color: 'red', marginBottom: '16px', textAlign: 'center' }}>{erro}</div>}
+        {erro && <div className="error-message" role="alert">{erro}</div>}
 
-        <form onSubmit={lidarComEnvio} className="login-form">
-          <button type="submit" className="btn w-100">
-            Entrar via Keycloak
+        <form onSubmit={handleSubmit} className="login-form">
+          <div className="form-group">
+            <label htmlFor="kc-username">Usuário</label>
+            <input
+              id="kc-username"
+              type="text"
+              placeholder="ex: med.cardoso"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              autoFocus
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="kc-password">Senha</label>
+            <input
+              id="kc-password"
+              type="password"
+              placeholder="********"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+          </div>
+          <button type="submit" className="btn w-100" disabled={carregando}>
+            {carregando ? 'Autenticando...' : 'Entrar'}
           </button>
         </form>
       </div>

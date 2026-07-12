@@ -29,6 +29,7 @@ import authRoutes from './routes/authRoutes.js';
 import patientRoutes from './routes/patientRoutes.js';
 import transformRoutes from './routes/transformRoutes.js';
 import mockAuthRoutes from './routes/mockAuthRoutes.js';
+import keycloakAuthRoutes from './routes/keycloakAuthRoutes.js';
 
 import { grpcClient } from './grpc/client.js';
 import { mockGrpcClient } from './grpc/mockClient.js';
@@ -58,30 +59,45 @@ await fastify.register(env, {
 
 let publicKey = null;
 
+const KNOWN_ROLES = new Set(['MEDICO', 'ESTAGIARIO', 'PESQUISADOR']);
+
 async function getPublicKey() {
   if (JWT_MOCK) {
     return fastify.config.JWT_SECRET;
   }
   if (publicKey) return publicKey;
   try {
-    const realm = process.env.KEYCLOAK_REALM || 'pspd-realm'; //pra poder testar localmente
-    let realmRes;
-    try {
-      realmRes = await fetch(`http://keycloak:8080/realms/${realm}`);
-    } catch (err) {
-      realmRes = await fetch(`${process.env.KEYCLOAK_URL || 'http://localhost:8080'}/realms/${realm}`);
+    const realm = process.env.KEYCLOAK_REALM || 'grupo04';
+    const keycloakUrl = process.env.KEYCLOAK_URL || 'https://kiriland.unb.br/keycloak';
+    
+    let realmRes = await fetch(`${keycloakUrl}/realms/${realm}`);
+    
+    if (!realmRes.ok) {
+      throw new Error(`Falha HTTP: ${realmRes.status}`);
     }
     
-    if (realmRes && realmRes.ok) {
-      const realmData = await realmRes.json();
-      publicKey = `-----BEGIN PUBLIC KEY-----\n${realmData.public_key}\n-----END PUBLIC KEY-----`;
-      fastify.log.info("Chave pública do Keycloak obtida com sucesso.");
-      return publicKey;
-    }
+    const realmData = await realmRes.json();
+    publicKey = `-----BEGIN PUBLIC KEY-----\n${realmData.public_key}\n-----END PUBLIC KEY-----`;
+    fastify.log.info('Chave pública do Keycloak obtida com sucesso.');
+    return publicKey;
   } catch (e) {
-    fastify.log.warn("Falha ao buscar chave pública: " + e.message);
+    fastify.log.warn('Falha ao buscar chave pública: ' + e.message);
   }
   return fastify.config.JWT_SECRET;
+}
+
+async function fetchUserInfoFromKeycloak(bearerToken) {
+  const keycloakUrl = process.env.KEYCLOAK_URL || 'http://keycloak:8080';
+  const realm = process.env.KEYCLOAK_REALM || 'pspd-realm';
+  const url = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/userinfo`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${bearerToken}` }
+  });
+  if (!res.ok) throw new Error(`Keycloak /userinfo retornou ${res.status}`);
+  const info = await res.json();
+  const role = (info.groups || []).find(g => KNOWN_ROLES.has(g)) || null;
+  const username = info.preferred_username || info.upn || null;
+  return { username, role, name: info.name || username };
 }
 
 await fastify.register(jwt, {
@@ -91,11 +107,18 @@ await fastify.register(jwt, {
   verify: { algorithms: JWT_MOCK ? ['HS256'] : ['RS256', 'HS256'] }
 });
 
-fastify.decorate("authenticate", async (request, reply) => {
+fastify.decorate('authenticate', async (request, reply) => {
   try {
     await request.jwtVerify();
+    if (!JWT_MOCK) {
+      const rawToken = (request.headers.authorization || '').replace('Bearer ', '');
+      const userInfo = await fetchUserInfoFromKeycloak(rawToken);
+      request.user = { ...request.user, ...userInfo };
+      fastify.log.info({ username: userInfo.username, role: userInfo.role }, 'Identidade via /userinfo');
+    }
   } catch (err) {
-    reply.status(401).send({ message: "Token inválido ou ausente" });
+    fastify.log.warn('Falha na autenticação: ' + err.message);
+    reply.status(401).send({ message: 'Token inválido ou ausente' });
   }
 });
 
@@ -125,6 +148,7 @@ await fastify.register(swaggerUi, {
 await fastify.register(authRoutes, { prefix: '/api/auth' });
 await fastify.register(patientRoutes, { prefix: '/api/patients' });
 await fastify.register(transformRoutes, { prefix: '/api/transform' });
+await fastify.register(keycloakAuthRoutes, { prefix: '/api/auth' });
 
 if (JWT_MOCK) {
   await fastify.register(mockAuthRoutes, { prefix: '/api/auth' });
