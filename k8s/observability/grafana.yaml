@@ -50,48 +50,49 @@ data:
       "title": "PSPD - Visao geral dos microservicos",
       "uid": "pspd-overview",
       "schemaVersion": 38,
+      "refresh": "5s",
       "panels": [
         {
-          "title": "Requisicoes por sec (API Gateway)",
+          "title": "Uso de CPU (Node.js)",
           "type": "timeseries",
           "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
           "targets": [
             {
-              "expr": "rate(http_requests_total{kubernetes_namespace='grupo-4',app='api-gateway'}[1m])",
-              "legendFormat": "{{method}} {{status}}"
-            }
-          ]
-        },
-        {
-          "title": "Latencia P95 (ms)",
-          "type": "timeseries",
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-          "targets": [
-            {
-              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{kubernetes_namespace='grupo-4'}[5m])) by (le, app)) * 1000",
+              "expr": "rate(process_cpu_seconds_total{kubernetes_namespace='grupo-4'}[1m]) * 100",
               "legendFormat": "{{app}}"
             }
           ]
         },
         {
-          "title": "Uso de cpu por pod",
+          "title": "Uso de Memória (Node.js)",
           "type": "timeseries",
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
           "targets": [
             {
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace='grupo-4', container!=''}[1m])) by (pod)",
-              "legendFormat": "{{pod}}"
+              "expr": "process_resident_memory_bytes{kubernetes_namespace='grupo-4'}",
+              "legendFormat": "{{app}}"
             }
           ]
         },
         {
-          "title": "Replicas ativas por deployment (HPA)",
-          "type": "stat",
+          "title": "Requisições Ativas no Event Loop",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "targets": [
+            {
+              "expr": "nodejs_active_requests_total{kubernetes_namespace='grupo-4'}",
+              "legendFormat": "{{app}}"
+            }
+          ]
+        },
+        {
+          "title": "Latência do Event Loop (Node.js)",
+          "type": "timeseries",
           "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
           "targets": [
             {
-              "expr": "kube_deployment_status_replicas_available{namespace='grupo-4'}",
-              "legendFormat": "{{deployment}}"
+              "expr": "nodejs_eventloop_lag_seconds{kubernetes_namespace='grupo-4'}",
+              "legendFormat": "{{app}}"
             }
           ]
         }
