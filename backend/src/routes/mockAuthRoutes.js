@@ -1,34 +1,49 @@
-const VALID_ROLES = ['MEDICO', 'ESTAGIARIO', 'PESQUISADOR'];
+const USERS = new Map([
+  ['med.cardoso', 'MEDICO'],
+  ['med.lima', 'MEDICO'],
+  ['med.almeida', 'MEDICO'],
+  ['med.rocha', 'MEDICO'],
+  ['med.monteiro', 'MEDICO'],
+  ['est.ferreira', 'ESTAGIARIO'],
+  ['est.gomes', 'ESTAGIARIO'],
+  ['est.costa', 'ESTAGIARIO'],
+  ['est.melo', 'ESTAGIARIO'],
+  ['est.dias', 'ESTAGIARIO'],
+  ['pes.mendes', 'PESQUISADOR'],
+  ['pes.araujo', 'PESQUISADOR'],
+  ['pes.silveira', 'PESQUISADOR'],
+]);
+
+const MOCK_PASSWORD = 'PseudoPEP2026!';
 
 export default async function mockAuthRoutes(fastify, opts) {
   fastify.post('/mock-login', async (req, reply) => {
-    const { username, role } = req.body || {};
+    const { username, password } = req.body || {};
 
     if (!username || typeof username !== 'string' || !username.trim()) {
       return reply.status(400).send({ message: 'Campo "username" é obrigatório.' });
     }
 
-    const normalizedRole = String(role || '').toUpperCase();
-    if (!VALID_ROLES.includes(normalizedRole)) {
-      return reply.status(400).send({
-        message: `Campo "role" inválido. Use um de: ${VALID_ROLES.join(', ')}.`,
-      });
+    const normalizedUsername = username.trim().toLowerCase();
+    const role = USERS.get(normalizedUsername);
+    if (!role || password !== MOCK_PASSWORD) {
+      return reply.status(401).send({ message: 'Usuário ou senha incorretos.' });
     }
     const token = await reply.jwtSign(
       {
-        preferred_username: username.trim(),
-        role: normalizedRole,
+        preferred_username: normalizedUsername,
+        role,
         realm_access: {
-          roles: [normalizedRole],
+          roles: [role],
         },
-        sub: `mock-${username.trim()}`,
+        sub: `mock-${normalizedUsername}`,
         iss: 'mock-auth',
       },
       { expiresIn: '8h' }
     );
 
     fastify.log.info(
-      `[mock-auth] Login mock: username=${username.trim()} role=${normalizedRole}`
+      `[mock-auth] Login mock: username=${normalizedUsername} role=${role}`
     );
 
     return { token };

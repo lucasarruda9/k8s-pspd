@@ -35,6 +35,7 @@ import { mockGrpcClient } from './grpc/mockClient.js';
 
 const SERVICE = 'api-gateway';
 const JWT_MOCK = process.env.JWT_MOCK === 'true';
+const GRPC_MOCK = process.env.GRPC_MOCK === 'true';
 
 if (JWT_MOCK) {
   console.info('[Auth] JWT_MOCK=true — modo desenvolvimento ativo. Keycloak desabilitado.');
@@ -99,9 +100,9 @@ fastify.decorate("authenticate", async (request, reply) => {
   }
 });
 
-fastify.decorate("grpcClient", JWT_MOCK ? mockGrpcClient : grpcClient);
+fastify.decorate("grpcClient", GRPC_MOCK ? mockGrpcClient : grpcClient);
 
-if (JWT_MOCK) {
+if (GRPC_MOCK) {
   fastify.log.info('[mock-grpc] Usando mockGrpcClient — serviços gRPC não são necessários.');
 }
 

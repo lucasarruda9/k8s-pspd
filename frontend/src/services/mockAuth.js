@@ -36,7 +36,7 @@ export async function mockLogin(username, password) {
   const res = await fetch(`${API_BASE}/auth/mock-login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: userMatch.username, role: userMatch.role }),
+    body: JSON.stringify({ username: userMatch.username, password }),
   });
 
   if (!res.ok) {
