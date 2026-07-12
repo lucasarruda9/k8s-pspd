@@ -6,7 +6,7 @@ const errorRate = new Rate('errors');
 const loginDuration = new Trend('login_duration');
 const queryDuration = new Trend('query_duration');
 
-const BASE_URL = __ENV.GATEWAY_URL || 'http://localhost:8080';
+const BASE_URL = __ENV.GATEWAY_URL || 'http://localhost:3000/api';
 
 export const options = {
   stages: [
@@ -25,16 +25,16 @@ export const options = {
 };
 
 function login() {
-  const payload = JSON.stringify({ username: 'medico_teste', password: 'senha_teste' });
+  const payload = JSON.stringify({ username: 'med.cardoso', password: 'PseudoPEP2026!' });
   const params  = { headers: { 'Content-Type': 'application/json' } };
 
   const start = Date.now();
-  const res   = http.post(`${BASE_URL}/auth/login`, payload, params);
+  const res   = http.post(`${BASE_URL}/auth/keycloak-login`, payload, params);
   loginDuration.add(Date.now() - start);
 
   const ok = check(res, {
     'login: status 200':   (r) => r.status === 200,
-    'login: tokem presente': (r) => r.json('token') !== undefined,
+    'login: token presente': (r) => r.json('token') !== undefined,
   });
 
   errorRate.add(!ok);
@@ -45,11 +45,11 @@ function consultarPaciente(token) {
   const params = { headers: { Authorization: `Bearer ${token}` } };
 
   const start = Date.now();
-  const res   = http.get(`${BASE_URL}/patients/1`, params);
+  const res   = http.get(`${BASE_URL}/patients`, params);
   queryDuration.add(Date.now() - start);
 
   const ok = check(res, {
-    'consuta: status 200 ou 404': (r) => r.status === 200 || r.status === 404,
+    'consulta: status 200 ou 404': (r) => r.status === 200 || r.status === 404,
   });
 
   errorRate.add(!ok);
