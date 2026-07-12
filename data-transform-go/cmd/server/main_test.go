@@ -10,15 +10,16 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 
 	"github.com/lucasarruda9/k8s-pspd/data-transform-go/internal/mockdata"
+	"github.com/lucasarruda9/k8s-pspd/data-transform-go/internal/patientdata"
 	"github.com/lucasarruda9/k8s-pspd/data-transform-go/internal/transform"
 	pb "github.com/lucasarruda9/k8s-pspd/data-transform-go/proto"
 )
 
 type fakeCohorts struct{}
 
-func (fakeCohorts) FetchCohort(_ context.Context, projectID string) ([]*pb.DBPatient, []*pb.DBClinicalEvent, error) {
+func (fakeCohorts) FetchCohort(_ context.Context, projectID string) (*patientdata.Cohort, error) {
 	p, e := mockdata.FetchCohortForStatistics(projectID)
-	return p, e, nil
+	return &patientdata.Cohort{Patients: p, Events: e}, nil
 }
 
 func setup(t *testing.T) (pb.DataTransformServiceClient, func()) {

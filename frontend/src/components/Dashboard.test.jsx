@@ -68,9 +68,14 @@ describe('Dashboard Component', () => {
   it('deve renderizar a visão do Pesquisador corretamente', async () => {
     // Para pesquisador faz 2 chamadas: statistics e cohorts
     api.get.mockResolvedValueOnce({
-      data: { totalPacientes: '100', distribuicaoSexo: '50/50', mediaIdadeDiabetes: '50' }
+      data: { 
+        totalPacientes: '100', 
+        distribuicaoSexo: '50/50', 
+        mediaIdadeDiabetes: '50',
+        sample_exams: [{ pseudo_id: 'hash01', age: 50, gender: 'M', hba1c: 7, glicemia: 100, imc: 25 }]
+      }
     }).mockResolvedValueOnce({
-      data: [{ id: 'hash01', idade: 50, sexo: 'M', hba1c: 7, glicemia: 100, imc: 25 }]
+      data: []
     });
 
     render(<Dashboard usuario={{ username: 'pesquisador.teste', role: 'pesquisador' }} aoDeslogar={mockAoDeslogar} />);

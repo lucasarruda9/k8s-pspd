@@ -7,6 +7,7 @@ import { doLogin } from '../services/keycloak';
 // Mock do serviço de login do Keycloak e da telemetria
 vi.mock('../services/keycloak', () => ({
   doLogin: vi.fn(),
+  isMockMode: false,
 }));
 
 vi.mock('../services/telemetry', () => ({

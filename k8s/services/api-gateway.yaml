@@ -47,6 +47,10 @@ spec:
               value: "grupo04"
             - name: PORT
               value: "8000"
+            - name: JWT_MOCK
+              value: "false"
+            - name: GRPC_MOCK
+              value: "false"
           resources:
             requests:
               cpu: "100m"
