@@ -1,4 +1,21 @@
 import './tracer.js';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+try {
+  const __dir = dirname(fileURLToPath(import.meta.url));
+  const envPath = resolve(__dir, '../.env'); // backend/src/../.env = backend/.env
+  const lines = readFileSync(envPath, 'utf8').split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = trimmed.slice(0, eqIdx).trim();
+    const val = trimmed.slice(eqIdx + 1).trim();
+    if (!(key in process.env)) process.env[key] = val; // não sobrescreve vars do shell
+  }
+} catch { /* .env não encontrado: ok em produção */ }
 
 import Fastify from 'fastify';
 import jwt from '@fastify/jwt';
@@ -11,10 +28,17 @@ import { startMetricsServer } from './shared/metrics.js';
 import authRoutes from './routes/authRoutes.js';
 import patientRoutes from './routes/patientRoutes.js';
 import transformRoutes from './routes/transformRoutes.js';
+import mockAuthRoutes from './routes/mockAuthRoutes.js';
 
 import { grpcClient } from './grpc/client.js';
+import { mockGrpcClient } from './grpc/mockClient.js';
 
 const SERVICE = 'api-gateway';
+const JWT_MOCK = process.env.JWT_MOCK === 'true';
+
+if (JWT_MOCK) {
+  console.info('[Auth] JWT_MOCK=true — modo desenvolvimento ativo. Keycloak desabilitado.');
+}
 
 const fastify = Fastify({ logger: true });
 
@@ -35,6 +59,9 @@ await fastify.register(env, {
 let publicKey = null;
 
 async function getPublicKey() {
+  if (JWT_MOCK) {
+    return fastify.config.JWT_SECRET;
+  }
   if (publicKey) return publicKey;
   try {
     const realm = process.env.KEYCLOAK_REALM || 'pspd-realm'; //pra poder testar localmente
@@ -61,7 +88,7 @@ await fastify.register(jwt, {
   secret: async (request, token) => {
     return await getPublicKey();
   },
-  verify: { algorithms: ['RS256', 'HS256'] }
+  verify: { algorithms: JWT_MOCK ? ['HS256'] : ['RS256', 'HS256'] }
 });
 
 fastify.decorate("authenticate", async (request, reply) => {
@@ -72,7 +99,11 @@ fastify.decorate("authenticate", async (request, reply) => {
   }
 });
 
-fastify.decorate("grpcClient", grpcClient);
+fastify.decorate("grpcClient", JWT_MOCK ? mockGrpcClient : grpcClient);
+
+if (JWT_MOCK) {
+  fastify.log.info('[mock-grpc] Usando mockGrpcClient — serviços gRPC não são necessários.');
+}
 
 // Swagger 
 await fastify.register(swagger, {
@@ -94,6 +125,11 @@ await fastify.register(swaggerUi, {
 await fastify.register(authRoutes, { prefix: '/api/auth' });
 await fastify.register(patientRoutes, { prefix: '/api/patients' });
 await fastify.register(transformRoutes, { prefix: '/api/transform' });
+
+if (JWT_MOCK) {
+  await fastify.register(mockAuthRoutes, { prefix: '/api/auth' });
+  fastify.log.info('[mock-auth] Endpoint POST /api/auth/mock-login registrado.');
+}
 
 const start = async () => {
   try {

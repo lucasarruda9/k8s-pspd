@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-import keycloak, { initKeycloak, doLogout } from './services/keycloak';
+import keycloak, { initKeycloak, doLogout, isMockMode } from './services/keycloak';
+import { getMockUser, mockLogout } from './services/mockAuth';
 
 function App() {
   //guarda os dados do usuario logado no momento
@@ -13,13 +14,20 @@ function App() {
   useEffect(() => {
     initKeycloak((autenticado) => {
       if (autenticado) {
-        // Extrai as informações do Token JWT
-        const tokenParsed = keycloak.tokenParsed;
-        setUsuarioLogado({
-          username: tokenParsed.preferred_username,
-          // O Keycloak armazena as roles do client ou realm. Para simplificar, vamos assumir que injetamos num claim 'role' ou usar a role do realm
-          role: tokenParsed.realm_access?.roles?.find(r => ['MEDICO', 'PESQUISADOR', 'ESTAGIARIO'].includes(r.toUpperCase()))?.toUpperCase() || 'DESCONHECIDO'
-        });
+        let dadosUsuario;
+        if (isMockMode) {
+          dadosUsuario = getMockUser();
+        } else {
+          // Extrai as informações do Token JWT
+          const tokenParsed = keycloak.tokenParsed;
+          dadosUsuario = {
+            username: tokenParsed.preferred_username,
+            role: tokenParsed.realm_access?.roles?.find(r =>
+              ['MEDICO', 'PESQUISADOR', 'ESTAGIARIO'].includes(r.toUpperCase())
+            )?.toUpperCase() || 'DESCONHECIDO'
+          };
+        }
+        setUsuarioLogado(dadosUsuario);
         navegar('/dashboard');
       }
       setInicializado(true);
@@ -29,7 +37,12 @@ function App() {
   //funcao para limpar a sessao e redirecionar para o login
   const realizarLogout = () => {
     setUsuarioLogado(null);
-    doLogout();
+    if (isMockMode) {
+      mockLogout();
+      navegar('/login');
+    } else {
+      doLogout();
+    }
   };
 
   if (!inicializado) {
