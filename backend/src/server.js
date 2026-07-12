@@ -42,7 +42,7 @@ if (JWT_MOCK) {
   console.info('[Auth] JWT_MOCK=true — modo desenvolvimento ativo. Keycloak desabilitado.');
 }
 
-const fastify = Fastify({ logger: true });
+const fastify = Fastify({ logger: true, bodyLimit: 52428800 });
 
 await fastify.register(cors);
 
