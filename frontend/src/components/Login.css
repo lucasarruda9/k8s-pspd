@@ -83,3 +83,18 @@
 .w-100 {
   width: 100%;
 }
+
+.error-message {
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: var(--radius-6);
+  color: #ef4444;
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  text-align: center;
+}
+
+.login-header p strong {
+  color: var(--verdigris);
+}

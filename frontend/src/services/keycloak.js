@@ -1,4 +1,11 @@
 import Keycloak from 'keycloak-js';
+import { getMockToken, isMockAuthenticated } from './mockAuth';
+
+const MOCK_MODE = import.meta.env.VITE_AUTH_MOCK === 'true';
+
+if (MOCK_MODE) {
+  console.info('[Auth] Modo mock ativo — Keycloak desabilitado.');
+}
 
 const keycloakConfig = {
   url: import.meta.env.VITE_KEYCLOAK_URL || 'https://kiriland.unb.br/keycloak',
@@ -6,11 +13,16 @@ const keycloakConfig = {
   clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID || 'frontend-client'
 };
 
-const keycloak = new Keycloak(keycloakConfig);
+const keycloak = MOCK_MODE ? null : new Keycloak(keycloakConfig);
 
 let isInitialized = false;
 
 export const initKeycloak = (onAuthenticatedCallback) => {
+  if (MOCK_MODE) {
+    onAuthenticatedCallback(isMockAuthenticated());
+    return;
+  }
+
   if (isInitialized) {
     onAuthenticatedCallback(keycloak.authenticated);
     return;
@@ -32,13 +44,17 @@ export const initKeycloak = (onAuthenticatedCallback) => {
   });
 };
 
-export const doLogin = keycloak.login;
-export const doLogout = keycloak.logout;
-export const getToken = () => keycloak.token;
-export const getParsedToken = () => keycloak.tokenParsed;
-export const updateToken = (successCallback) =>
-  keycloak.updateToken(5)
-    .then(successCallback)
-    .catch(doLogin);
+export const doLogin  = MOCK_MODE ? () => {} : keycloak.login.bind(keycloak);
+export const doLogout = MOCK_MODE ? () => {} : keycloak.logout.bind(keycloak);
+export const getToken = MOCK_MODE
+  ? getMockToken
+  : () => keycloak?.token;
+export const getParsedToken = MOCK_MODE
+  ? () => null
+  : () => keycloak?.tokenParsed;
+export const updateToken = MOCK_MODE
+  ? (cb) => Promise.resolve().then(cb)
+  : (successCallback) => keycloak.updateToken(5).then(successCallback).catch(doLogin);
+export const isMockMode = MOCK_MODE;
 
 export default keycloak;

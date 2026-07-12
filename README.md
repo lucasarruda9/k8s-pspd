@@ -95,8 +95,68 @@ npm install
 npm run dev
 ```
 
+### 4. Modo Mock (sem Keycloak client ID)
+
+Caso o Keycloak do cluster não possua um client ID configurado para o frontend, o sistema pode operar em modo mock, substituindo a autenticação OAuth2 por um formulário local com seleção de papel.
+
+#### Desenvolvimento local
+
+```bash
+# backend/.env
+JWT_MOCK=true
+
+VITE_AUTH_MOCK=true
+VITE_API_GATEWAY_URL=http://localhost:3000/api
+```
+
+```bash
+# Terminal 1
+cd backend && node src/server.js
+
+# Terminal 2
+cd frontend && npm run dev
+```
+
+#### Deploy no cluster (modo mock)
+
+**1. Build das imagens com mock ativo:**
+
+```bash
+# Build local
+./scripts/build-mock.sh
+
+# Build + push para o DockerHub
+./scripts/build-mock.sh --push --tag=latest-mock
+```
+
+**2. Atualizar as imagens nos manifests do k8s:**
+
+```bash
+# Opção A: atualizar via kubectl set image
+KUBE="--kubeconfig=.kube/kubeconfig-grupo-4.yaml"
+kubectl set image deployment/frontend   frontend=artmendy/frontend:latest-mock   -n grupo-4 $KUBE
+kubectl set image deployment/api-gateway api-gateway=artmendy/api-gateway:latest-mock -n grupo-4 $KUBE
+
+# Opção B: editar frontend.yaml e api-gateway.yaml com a nova tag e aplicar normalmente
+kubectl apply -f k8s/services/ $KUBE
+```
+
+> O `JWT_MOCK=true` já está configurado no `k8s/services/api-gateway.yaml`.
+> O `VITE_AUTH_MOCK=true` é injetado no build via `--build-arg` pelo script `build-mock.sh`.
+
+#### Endpoints do modo mock
+
+| Endpoint | Descrição |
+|---|---|
+| `POST /api/auth/mock-login` | Gera token JWT HS256 local |
+| `GET  /api/patients` | Retorna lista mock (varia por papel) |
+| `GET  /api/patients/statistics/:id` | Estatísticas mock para pesquisador |
+| `GET  /api/patients/cohorts/:id` | Coorte mock |
+| `POST /api/transform/transform-fhir` | Transformação FHIR mock |
+
 | Versao | Descricao | Autor(es) | Data | Revisor(es) | Data de Revisao |
 |---|---|---|---|---|---|
 | 1.0 | Estrutura inicial do README | [João Pedro Cota](https://github.com/johnaopedro) | 10/07/2026 | [João Pedro Cota](https://github.com/johnaopedro) | 10/07/2026 |
 | 1.1 | Adiciona instrucoes de deploy Kubernetes | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 |
 | 1.2 | Refatora arquitetura para uso de OAUTH2 e Observabilidade centralizada | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 |
+| 1.3 | Adiciona modo mock de autenticacao para dev local e deploy sem client ID | [João Pedro Cota](https://github.com/johnaopedro) | 12/07/2026 | [João Pedro Cota](https://github.com/johnaopedro) | 12/07/2026 |

@@ -21,12 +21,12 @@ const TabelaGenerica = ({ colunas, dados, renderizarLinha }) => (
 );
 
 //componente para a visao do medico que pode ver tudo
-const VisaoDoMedico = ({ pacientes }) => (
+const VisaoDoMedico = ({ pacientes, abrirModal }) => (
   <div className="view-container">
-    <h2>Meus Pacientes</h2>
+    <h2>Meus Pacientes <span className="badge" style={{backgroundColor: '#10B981'}}>Acesso FULL</span></h2>
     
     <TabelaGenerica 
-      colunas={['Nome Completo', 'CPF', 'Nascimento', 'Último Diagnóstico', 'Ação']}
+      colunas={['Nome Completo', 'CPF', 'Nascimento', 'Último Diagnóstico', 'Ações (Prontuário Completo)']}
       dados={pacientes}
       renderizarLinha={(paciente) => (
         <tr key={paciente.id}>
@@ -34,7 +34,14 @@ const VisaoDoMedico = ({ pacientes }) => (
           <td>{paciente.cpf}</td>
           <td>{paciente.nascimento}</td>
           <td>{paciente.diagnostico}</td>
-          <td><button className="btn">Prontuário Completo</button></td>
+          <td>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Resumo Clínico', paciente.id, 'events')}>Resumo</button>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Histórico Clínico', paciente.id, 'encounters')}>Histórico</button>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Exames Laboratoriais', paciente.id, 'events')}>Exames</button>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Medicamentos Prescritos', paciente.id, 'events')}>Medicamentos</button>
+            </div>
+          </td>
         </tr>
       )}
     />
@@ -42,12 +49,12 @@ const VisaoDoMedico = ({ pacientes }) => (
 );
 
 //componente para a visao do estagiario que ve coisas censuradas
-const VisaoDoEstagiario = ({ pacientes }) => (
+const VisaoDoEstagiario = ({ pacientes, abrirModal }) => (
   <div className="view-container">
-    <h2>Pacientes Supervisionados</h2>
+    <h2>Pacientes Supervisionados <span className="badge" style={{backgroundColor: '#F59E0B'}}>Acesso PARTIAL</span></h2>
     
     <TabelaGenerica 
-      colunas={['Iniciais', 'Idade', 'Sexo', 'Último Diagnóstico', 'Ação']}
+      colunas={['Iniciais', 'Idade', 'Sexo', 'Último Diagnóstico', 'Ações (Dados Anonimizados)']}
       dados={pacientes}
       renderizarLinha={(paciente) => (
         <tr key={paciente.id}>
@@ -55,34 +62,85 @@ const VisaoDoEstagiario = ({ pacientes }) => (
           <td>{paciente.idade}</td>
           <td>{paciente.sexo}</td>
           <td>{paciente.diagnostico}</td>
-          <td><button className="btn">Ver Exames</button></td>
+          <td>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Resumo Clínico', paciente.id, 'events')}>Resumo</button>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Exames Laboratoriais', paciente.id, 'events')}>Exames</button>
+              <button className="btn" style={{ padding: '4px 8px', fontSize: '0.8rem' }} onClick={() => abrirModal('Medicamentos Prescritos', paciente.id, 'events')}>Medicamentos</button>
+            </div>
+          </td>
         </tr>
       )}
     />
   </div>
 );
 
+// Estilo extraído para evitar duplicação (SonarQube)
+const detailHeaderStyle = { borderBottom: '1px solid #cbd5e1', paddingBottom: '10px', marginBottom: '10px' };
+const listItemStyle = { display: 'flex', justifyContent: 'space-between', padding: '5px 0' };
+
 //componente para o pesquisador que so ve estatisticas e dados
 const VisaoDoPesquisador = ({ estatisticas, amostras }) => (
   <div className="view-container">
-    <h2>Painel de Pesquisa</h2>
+    <h2>Painel de Pesquisa <span className="badge" style={{backgroundColor: '#6366F1'}}>Acesso ANONYMIZED</span></h2>
     
     <div className="dashboard-grid">
       <div className="stat-card glass-panel">
-        <h3>Total de Pacientes na Coorte</h3>
-        <p className="stat-value">{estatisticas.totalPacientes}</p>
+        <h3>Total na Coorte</h3>
+        <p className="stat-value">{estatisticas.totalPacientes || estatisticas.total_patients}</p>
       </div>
       <div className="stat-card glass-panel">
         <h3>Distribuição por Sexo</h3>
-        <p className="stat-value">{estatisticas.distribuicaoSexo}</p>
+        <p className="stat-value" style={{ fontSize: '1.8rem' }}>{estatisticas.distribuicaoSexo || estatisticas.gender_distribution}</p>
       </div>
       <div className="stat-card glass-panel">
-        <h3>Média de Idade (Diabetes)</h3>
-        <p className="stat-value">{estatisticas.mediaIdadeDiabetes}</p>
+        <h3>Média de Idade</h3>
+        <p className="stat-value" style={{ fontSize: '1.8rem' }}>{estatisticas.mediaIdadeDiabetes || estatisticas.average_age}</p>
       </div>
     </div>
 
-    <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Amostra de Exames Anonimizados</h3>
+    {/* Estatísticas Detalhadas */}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '40px' }}>
+      
+      <div className="glass-panel" style={{ padding: '20px', borderRadius: '8px' }}>
+        <h3 style={detailHeaderStyle}>Faixa Etária</h3>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {estatisticas.age_ranges?.map((item, idx) => (
+            <li key={idx} style={listItemStyle}>
+              <span>{item.range} anos</span>
+              <strong>{item.percentage}%</strong>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="glass-panel" style={{ padding: '20px', borderRadius: '8px' }}>
+        <h3 style={detailHeaderStyle}>Departamentos Mais Usados</h3>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {estatisticas.departments?.map((item, idx) => (
+            <li key={idx} style={listItemStyle}>
+              <span>{item.department_name}</span>
+              <strong>{item.percentage}%</strong>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="glass-panel" style={{ padding: '20px', borderRadius: '8px' }}>
+        <h3 style={detailHeaderStyle}>Medicamentos Comuns</h3>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {estatisticas.medications?.map((item, idx) => (
+            <li key={idx} style={listItemStyle}>
+              <span>{item.medication_name}</span>
+              <strong>{item.count} prescrições</strong>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+    </div>
+
+    <h3 style={{ marginTop: '2rem', marginBottom: '1rem' }}>Amostra de Exames Anonimizados (Pseudo-ID)</h3>
     
     <TabelaGenerica 
       colunas={['Pseudo-ID', 'Idade', 'Sexo', 'HbA1c', 'Glicemia', 'IMC']}
@@ -106,6 +164,12 @@ export default function Dashboard({ usuario, aoDeslogar }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Estados do Modal
+  const [modalAberto, setModalAberto] = useState(false);
+  const [modalTitulo, setModalTitulo] = useState('');
+  const [modalDados, setModalDados] = useState(null);
+  const [modalLoading, setModalLoading] = useState(false);
+
   useEffect(() => {
     const fetchDados = async () => {
       try {
@@ -116,11 +180,19 @@ export default function Dashboard({ usuario, aoDeslogar }) {
           setDadosDaVisao({ tipo: roleLower, pacientes: res.data });
         } else if (roleLower === 'pesquisador') {
           const resEstat = await api.get('/patients/statistics/1');
-          const resAmostra = await api.get('/patients/cohorts/1');
+          await api.get('/patients/cohorts/1'); // Chamada mantida por compatibilidade, mas o retorno não é mais usado
           setDadosDaVisao({ 
             tipo: 'pesquisador', 
             estatisticas: resEstat.data, 
-            amostras: resAmostra.data?.patients || resAmostra.data || [] 
+            // Usa o sample_exams retornado pela estatística
+            amostras: (resEstat.data?.sample_exams || []).map(e => ({
+              id: e.pseudo_id,
+              idade: e.age,
+              sexo: e.gender,
+              hba1c: e.hba1c,
+              glicemia: e.glicemia,
+              imc: e.imc
+            }))
           });
         }
       } catch (err) {
@@ -136,6 +208,29 @@ export default function Dashboard({ usuario, aoDeslogar }) {
     }
   }, [usuario]);
 
+  const abrirModal = async (titulo, pacienteId, tipo) => {
+    setModalTitulo(titulo);
+    setModalAberto(true);
+    setModalLoading(true);
+    setModalDados(null);
+    try {
+      let endpoint = '';
+      if (tipo === 'events') endpoint = `/patients/${pacienteId}`;
+      else if (tipo === 'encounters') endpoint = `/patients/${pacienteId}/encounters`;
+      
+      const res = await api.get(endpoint);
+      setModalDados(res.data);
+    } catch (err) {
+      console.error(err);
+      setModalDados({ error: 'Erro ao carregar dados do prontuário.' });
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const fecharModal = () => setModalAberto(false);
+
+
   //funcao que decide qual tela mostrar baseada no tipo de usuario
   const decidirOQueMostrar = () => {
     if (loading) return <p>Carregando dados seguros do servidor...</p>;
@@ -144,9 +239,9 @@ export default function Dashboard({ usuario, aoDeslogar }) {
 
     switch (dadosDaVisao.tipo) {
       case 'medico':
-        return <VisaoDoMedico pacientes={dadosDaVisao.pacientes} />;
+        return <VisaoDoMedico pacientes={dadosDaVisao.pacientes} abrirModal={abrirModal} />;
       case 'estagiario':
-        return <VisaoDoEstagiario pacientes={dadosDaVisao.pacientes} />;
+        return <VisaoDoEstagiario pacientes={dadosDaVisao.pacientes} abrirModal={abrirModal} />;
       case 'pesquisador':
         return <VisaoDoPesquisador estatisticas={dadosDaVisao.estatisticas} amostras={dadosDaVisao.amostras} />;
       default:
@@ -164,13 +259,13 @@ export default function Dashboard({ usuario, aoDeslogar }) {
     // Adapta os dados locais para o formato esperado pelo backend
     const dadosParaExportar = dadosDaVisao.pacientes || dadosDaVisao.amostras || [];
     
-    // Simplificando o envio baseando-nos no tipo
     dadosParaExportar.forEach(item => {
       raw_patients.push({
         id_paciente: item.id || item.pseudo_id || "unknown",
         nome: item.nomeCompleto || item.iniciais || "",
         data_nascimento: item.nascimento || item.idade?.toString() || "",
-        genero: item.sexo || ""
+        genero: item.sexo || "",
+        cpf: item.cpf || ""
       });
       if (item.diagnostico) {
         raw_events.push({
@@ -194,23 +289,91 @@ export default function Dashboard({ usuario, aoDeslogar }) {
         raw_events
       });
       
+      const { patients = [], encounters = [], conditions = [], observations = [], medications = [] } = response.data;
+      
+      const entries = [
+        ...patients, 
+        ...encounters, 
+        ...conditions, 
+        ...observations, 
+        ...medications
+      ].map(res => ({
+        resource: res
+      }));
+
       const fhirResource = {
         resourceType: "Bundle",
         type: "collection",
-        entry: response.data
+        entry: entries
       };
 
       const blob = new Blob([JSON.stringify(fhirResource, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `exportacao-fhir-${dadosDaVisao.tipo}.json`;
+      a.download = `prontuarios_fhir_${userRole}.json`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Erro ao exportar FHIR", err);
-      alert("Falha na comunicação com o serviço de transformação FHIR.");
+      console.error(err);
+      alert('Erro ao exportar FHIR.');
     }
+  };
+
+  const renderModalContent = () => {
+    if (modalLoading) {
+      return <p>Buscando dados no banco...</p>;
+    }
+    if (modalDados?.error) {
+      return <p style={{ color: 'red' }}>{modalDados.error}</p>;
+    }
+    if (modalDados && modalDados.length > 0) {
+      return (
+        <div className="modal-data-list">
+          {modalDados
+            .filter(item => {
+              if (!item.tipo_evento) return true;
+              const tipo = item.tipo_evento.toLowerCase();
+              if (modalTitulo.includes('Medicamentos')) return tipo.includes('medic');
+              if (modalTitulo.includes('Exames')) return tipo.includes('observ');
+              return true;
+            })
+            .map((item, index) => (
+              <div key={index} style={{ padding: '12px', borderBottom: '1px solid #e2e8f0', marginBottom: '8px' }}>
+                {item.tipo_atendimento ? (
+                  <div>
+                    <strong style={{ color: '#0f172a', fontSize: '1.1rem' }}>{item.tipo_atendimento}</strong>
+                    <span style={{ float: 'right', color: '#64748b' }}>
+                      {new Date(item.data_inicio).toLocaleDateString('pt-BR')}
+                    </span>
+                    <p style={{ margin: '4px 0 0', color: '#475569' }}>
+                      <strong>Setor:</strong> {item.setor_departamento}
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <strong style={{ color: '#0f172a', fontSize: '1.1rem' }}>
+                      {item.descricao_evento || item.codigo_tipo_evento}
+                    </strong>
+                    <span style={{ float: 'right', color: '#64748b' }}>
+                      {new Date(item.data_evento).toLocaleDateString('pt-BR')}
+                    </span>
+                    <p style={{ margin: '4px 0 0', color: '#475569' }}>
+                      <strong>Tipo:</strong> {item.tipo_evento?.toLowerCase()?.includes('medic') ? '💊 Medicamento' : '🔬 Exame'}
+                      {item.valor && (
+                        <span style={{ marginLeft: '16px' }}>
+                          <strong>Resultado/Dose:</strong> {item.valor} {item.unidade_valor}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))}
+        </div>
+      );
+    }
+    return <p>Nenhum registro encontrado para este paciente.</p>;
   };
 
   return (
@@ -221,12 +384,12 @@ export default function Dashboard({ usuario, aoDeslogar }) {
           <h1>Sistema Clínico</h1>
         </div>
         <div className="user-profile">
-          <button className="btn" onClick={exportarFHIR} style={{marginRight: '15px', backgroundColor: '#8B5CF6'}}>
+          <button className="btn" style={{marginRight: '15px', backgroundColor: '#8B5CF6'}} onClick={exportarFHIR}>
             ⬇ Exportar FHIR
           </button>
           <span className="user-info">
-            <strong>{usuario?.username}</strong>
-            <span className="badge">{usuario?.role}</span>
+            <strong>{usuario.username}</strong>
+            <span className="badge">{usuario.role}</span>
           </span>
           <button className="btn-logout" onClick={aoDeslogar}>Sair</button>
         </div>
@@ -235,6 +398,20 @@ export default function Dashboard({ usuario, aoDeslogar }) {
       <main className="dashboard-content">
         {decidirOQueMostrar()}
       </main>
+
+      {modalAberto && (
+        <div className="modal-overlay" onClick={fecharModal}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{modalTitulo}</h2>
+              <button className="btn-close" onClick={fecharModal}>&times;</button>
+            </div>
+            <div className="modal-body">
+              {renderModalContent()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
