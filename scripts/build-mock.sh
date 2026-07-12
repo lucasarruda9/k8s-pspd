@@ -28,7 +28,7 @@ echo ">>> [1/2] Build do frontend (VITE_AUTH_MOCK=true)..."
 docker build \
   --file "${ROOT_DIR}/frontend/Dockerfile" \
   --build-arg VITE_AUTH_MOCK=true \
-  --build-arg VITE_API_GATEWAY_URL=/api \
+  --build-arg VITE_API_GATEWAY_URL=/grupo4/api \
   --build-arg VITE_KEYCLOAK_REALM=grupo04 \
   --tag "${FRONTEND_IMAGE}" \
   "${ROOT_DIR}/frontend"
@@ -52,7 +52,7 @@ if [ "${DO_PUSH}" = "true" ]; then
   echo "    KUBE=\"--kubeconfig=.kube/kubeconfig-grupo-4.yaml\""
   echo "    kubectl set image deployment/frontend   frontend=${FRONTEND_IMAGE}   -n grupo-4 \$KUBE"
   echo "    kubectl set image deployment/api-gateway api-gateway=${BACKEND_IMAGE} -n grupo-4 \$KUBE"
-  echo "    kubectl set env deployment/api-gateway JWT_MOCK=true -n grupo-4 \$KUBE"
+  echo "    kubectl set env deployment/api-gateway JWT_MOCK=true GRPC_MOCK=false -n grupo-4 \$KUBE"
 else
   echo ">>> Para fazer push: ./scripts/build-mock.sh --push"
 fi

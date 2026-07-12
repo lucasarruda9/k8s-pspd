@@ -28,7 +28,7 @@ echo ">>> [1/2] Build do frontend (autenticação Keycloak)..."
 docker build \
   --file "${ROOT_DIR}/frontend/Dockerfile" \
   --build-arg VITE_AUTH_MOCK=false \
-  --build-arg VITE_API_GATEWAY_URL=/api \
+  --build-arg VITE_API_GATEWAY_URL=/grupo4/api \
   --build-arg VITE_KEYCLOAK_URL=https://kiriland.unb.br/keycloak \
   --build-arg VITE_KEYCLOAK_REALM=grupo04 \
   --build-arg VITE_KEYCLOAK_CLIENT_ID=frontend-client \

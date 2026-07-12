@@ -8,7 +8,7 @@ COPY package.json package-lock.json* ./
 RUN npm ci
 
 ARG VITE_AUTH_MOCK=false
-ARG VITE_API_GATEWAY_URL=/api
+ARG VITE_API_GATEWAY_URL=/grupo4/api
 ARG VITE_KEYCLOAK_URL=https://kiriland.unb.br/keycloak
 ARG VITE_KEYCLOAK_REALM=grupo04
 ARG VITE_KEYCLOAK_CLIENT_ID=frontend-client

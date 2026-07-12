@@ -14,6 +14,7 @@ const keycloakConfig = {
 };
 
 const keycloak = MOCK_MODE ? null : new Keycloak(keycloakConfig);
+const appUrl = `${window.location.origin}${import.meta.env.BASE_URL}`;
 
 let isInitialized = false;
 
@@ -44,8 +45,12 @@ export const initKeycloak = (onAuthenticatedCallback) => {
   });
 };
 
-export const doLogin  = MOCK_MODE ? () => {} : keycloak.login.bind(keycloak);
-export const doLogout = MOCK_MODE ? () => {} : keycloak.logout.bind(keycloak);
+export const doLogin = MOCK_MODE
+  ? () => {}
+  : () => keycloak.login({ redirectUri: appUrl });
+export const doLogout = MOCK_MODE
+  ? () => {}
+  : () => keycloak.logout({ redirectUri: appUrl });
 export const getToken = MOCK_MODE
   ? getMockToken
   : () => keycloak?.token;
