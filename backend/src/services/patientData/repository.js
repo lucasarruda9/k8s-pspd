@@ -59,21 +59,33 @@ export async function findClinicalEvents(patientId) {
   return rows.map(toDBClinicalEvent);
 }
 
+const ATENDIMENTOS_DA_COORTE = `
+  SELECT e.id_atendimento, e.id_paciente, e.data_inicio, e.data_fim,
+         e.tipo_atendimento, e.setor
+  FROM encounters e
+  WHERE e.id_paciente IN (
+    SELECT DISTINCT ce.id_paciente
+    FROM clinical_events ce
+    WHERE ce.tipo_evento = 'CONDICAO' AND ce.codigo_evento = $1
+  )`;
+
 export async function findCohortData(projectId) {
   const projRows = await query(CONDICAO_DO_PROJETO, [projectId]);
   if (projRows.length === 0) {
-    return { condition_code: '', patients: [], relevant_events: [] };
+    return { condition_code: '', patients: [], relevant_events: [], encounters: [] };
   }
   const conditionCode = projRows[0].codigo_condicao;
 
-  const [patientRows, eventRows] = await Promise.all([
+  const [patientRows, eventRows, encounterRows] = await Promise.all([
     query(queries.pacientesDaCoorte, [conditionCode]),
     query(queries.eventosDaCoorte, [conditionCode]),
+    query(ATENDIMENTOS_DA_COORTE, [conditionCode]),
   ]);
 
   return {
     condition_code: asText(conditionCode),
     patients: patientRows.map(toDBPatient),
     relevant_events: eventRows.map(toDBClinicalEvent),
+    encounters: encounterRows.map(toDBEncounter),
   };
 }

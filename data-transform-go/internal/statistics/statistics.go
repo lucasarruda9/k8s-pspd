@@ -1,5 +1,3 @@
-// Package statistics produz as estatísticas agregadas da coorte (nível
-// AGGREGATED, perfil Pesquisador). Port do statistics.js.
 package statistics
 
 import (
@@ -11,12 +9,14 @@ import (
 	pb "github.com/lucasarruda9/k8s-pspd/data-transform-go/proto"
 )
 
-// Consumido pelo RPC GetCohortStatistics. Nenhum dado identificável é exposto.
-func Build(patients []*pb.DBPatient, events []*pb.DBClinicalEvent) *pb.StatisticsResponse {
+func Build(patients []*pb.DBPatient, encounters []*pb.DBEncounter, events []*pb.DBClinicalEvent) *pb.StatisticsResponse {
 	return &pb.StatisticsResponse{
 		TotalPatients:      int32(len(patients)),
 		GenderDistribution: genderDistribution(patients),
 		AverageAge:         averageAge(patients),
+		AgeRanges:          ageRanges(patients),
+		Departments:        departmentFrequency(encounters),
+		Medications:        medicationFrequency(events),
 		SampleExams:        buildAnonymizedExams(patients, events),
 	}
 }
@@ -52,6 +52,80 @@ func averageAge(patients []*pb.DBPatient) string {
 		return "0 anos"
 	}
 	return fmt.Sprintf("%.1f anos", float64(sum)/float64(count))
+}
+
+func ageRanges(patients []*pb.DBPatient) []*pb.AgeRangeDistribution {
+	if len(patients) == 0 {
+		return nil // evita divisão por zero
+	}
+	labels := []string{"0-18", "19-39", "40-59", "60+"}
+	counts := make([]int, len(labels))
+	now := time.Now()
+
+	for _, p := range patients {
+		age, ok := transform.ComputeAge(p.GetDataNascimento(), now)
+		if !ok {
+			continue
+		}
+		switch {
+		case age <= 18:
+			counts[0]++
+		case age <= 39:
+			counts[1]++
+		case age <= 59:
+			counts[2]++
+		default:
+			counts[3]++
+		}
+	}
+
+	total := float64(len(patients))
+	res := make([]*pb.AgeRangeDistribution, 0, len(labels))
+	for i, label := range labels {
+		res = append(res, &pb.AgeRangeDistribution{
+			Range:      label,
+			Percentage: float32(float64(counts[i]) / total * 100),
+		})
+	}
+	return res
+}
+
+func departmentFrequency(encounters []*pb.DBEncounter) []*pb.DepartmentFrequency {
+	if len(encounters) == 0 {
+		return nil // evita divisão por zero
+	}
+	freq := make(map[string]int)
+	for _, e := range encounters {
+		freq[e.GetSetorDepartamento()]++
+	}
+
+	total := float64(len(encounters))
+	res := make([]*pb.DepartmentFrequency, 0, len(freq))
+	for name, count := range freq {
+		res = append(res, &pb.DepartmentFrequency{
+			DepartmentName: name,
+			Percentage:     float32(float64(count) / total * 100),
+		})
+	}
+	return res
+}
+
+func medicationFrequency(events []*pb.DBClinicalEvent) []*pb.MedicationFrequency {
+	freq := make(map[string]int)
+	for _, ev := range events {
+		if strings.Contains(strings.ToLower(ev.GetTipoEvento()), "medica") {
+			freq[ev.GetCodigoTipoEvento()]++
+		}
+	}
+
+	res := make([]*pb.MedicationFrequency, 0, len(freq))
+	for name, count := range freq {
+		res = append(res, &pb.MedicationFrequency{
+			MedicationName: name,
+			Count:          int32(count),
+		})
+	}
+	return res
 }
 
 func buildAnonymizedExams(patients []*pb.DBPatient, events []*pb.DBClinicalEvent) []*pb.AnonymizedExam {
@@ -96,65 +170,4 @@ func buildAnonymizedExams(patients []*pb.DBPatient, events []*pb.DBClinicalEvent
 		})
 	}
 	return exams
-}
-func ageRanges(patients []*pb.DBPatient) []*pb.AgeRangeDistribution {
-    ranges := []string{"0-18", "19-39", "40-59", "60+"}
-    counts := make([]int, len(ranges))
-    now := time.Now()
-    
-    for _, p := range patients {
-        if age, ok := transform.ComputeAge(p.GetDataNascimento(), now); ok {
-            switch {
-            case age <= 18: counts[0]++
-            case age <= 39: counts[1]++
-            case age <= 59: counts[2]++
-            default: counts[3]++
-            }
-        }
-    }
-    
-    var res []*pb.AgeRangeDistribution
-    total := float64(len(patients))
-    for i, count := range ranges {
-        res = append(res, &pb.AgeRangeDistribution{
-            Range: count,
-            Percentage: float32(float64(counts[i]) / total * 100),
-        })
-    }
-    return res
-}
-
-func departmentFrequency(encounters []*pb.DBEncounter) []*pb.DepartmentFrequency {
-    freq := make(map[string]int)
-    for _, e := range encounters {
-        freq[e.GetSetorDepartamento()]++
-    }
-    
-    var res []*pb.DepartmentFrequency
-    total := float64(len(encounters))
-    for name, count := range freq {
-        res = append(res, &pb.DepartmentFrequency{
-            DepartmentName: name,
-            Percentage: float32(float64(count) / total * 100),
-        })
-    }
-    return res
-}
-
-func medicationFrequency(events []*pb.DBClinicalEvent) []*pb.MedicationFrequency {
-    freq := make(map[string]int)
-    for _, ev := range events {
-        if strings.Contains(strings.ToLower(ev.GetTipoEvento()), "medica") { 
-            freq[ev.GetCodigoTipoEvento()]++
-        }
-    }
-    
-    var res []*pb.MedicationFrequency
-    for name, count := range freq {
-        res = append(res, &pb.MedicationFrequency{
-            MedicationName: name,
-            Count: int32(count),
-        })
-    }
-    return res
 }

@@ -22,12 +22,22 @@ func Dial(addr string) (*Client, error) {
 	return &Client{conn: conn, svc: pb.NewPatientDataServiceClient(conn)}, nil
 }
 
-func (c *Client) FetchCohort(ctx context.Context, projectID string) ([]*pb.DBPatient, []*pb.DBClinicalEvent, error) {
+type Cohort struct {
+	Patients   []*pb.DBPatient
+	Encounters []*pb.DBEncounter
+	Events     []*pb.DBClinicalEvent
+}
+
+func (c *Client) FetchCohort(ctx context.Context, projectID string) (*Cohort, error) {
 	resp, err := c.svc.FetchCohortData(ctx, &pb.CohortQueryRequest{ProjectId: projectID})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return resp.GetPatients(), resp.GetRelevantEvents(), nil
+	return &Cohort{
+		Patients:   resp.GetPatients(),
+		Encounters: resp.GetEncounters(),
+		Events:     resp.GetRelevantEvents(),
+	}, nil
 }
 
 func (c *Client) Close() error {

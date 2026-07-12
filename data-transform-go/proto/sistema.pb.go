@@ -770,6 +770,7 @@ type CohortQueryResponse struct {
 	ConditionCode  string                 `protobuf:"bytes,1,opt,name=condition_code,json=conditionCode,proto3" json:"condition_code,omitempty"`
 	Patients       []*DBPatient           `protobuf:"bytes,2,rep,name=patients,proto3" json:"patients,omitempty"`
 	RelevantEvents []*DBClinicalEvent     `protobuf:"bytes,3,rep,name=relevant_events,json=relevantEvents,proto3" json:"relevant_events,omitempty"`
+	Encounters     []*DBEncounter         `protobuf:"bytes,4,rep,name=encounters,proto3" json:"encounters,omitempty"` // atendimentos da coorte (distribuição por departamento)
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -821,6 +822,13 @@ func (x *CohortQueryResponse) GetPatients() []*DBPatient {
 func (x *CohortQueryResponse) GetRelevantEvents() []*DBClinicalEvent {
 	if x != nil {
 		return x.RelevantEvents
+	}
+	return nil
+}
+
+func (x *CohortQueryResponse) GetEncounters() []*DBEncounter {
+	if x != nil {
+		return x.Encounters
 	}
 	return nil
 }
@@ -1689,6 +1697,7 @@ func (x *MedicationFrequency) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
+// Deprecated: Use MedicationFrequency.ProtoReflect.Descriptor instead.
 func (*MedicationFrequency) Descriptor() ([]byte, []int) {
 	return file_sistema_proto_rawDescGZIP(), []int{24}
 }
@@ -1859,11 +1868,14 @@ const file_sistema_proto_rawDesc = "" +
 	"\x06events\x18\x01 \x03(\v2 .clinical_system.DBClinicalEventR\x06events\"3\n" +
 	"\x12CohortQueryRequest\x12\x1d\n" +
 	"\n" +
-	"project_id\x18\x01 \x01(\tR\tprojectId\"\xbf\x01\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\"\xfd\x01\n" +
 	"\x13CohortQueryResponse\x12%\n" +
 	"\x0econdition_code\x18\x01 \x01(\tR\rconditionCode\x126\n" +
 	"\bpatients\x18\x02 \x03(\v2\x1a.clinical_system.DBPatientR\bpatients\x12I\n" +
-	"\x0frelevant_events\x18\x03 \x03(\v2 .clinical_system.DBClinicalEventR\x0erelevantEvents\"\xfa\x01\n" +
+	"\x0frelevant_events\x18\x03 \x03(\v2 .clinical_system.DBClinicalEventR\x0erelevantEvents\x12<\n" +
+	"\n" +
+	"encounters\x18\x04 \x03(\v2\x1c.clinical_system.DBEncounterR\n" +
+	"encounters\"\xfa\x01\n" +
 	"\x10TransformRequest\x12!\n" +
 	"\faccess_level\x18\x01 \x01(\tR\vaccessLevel\x12=\n" +
 	"\fraw_patients\x18\x02 \x03(\v2\x1a.clinical_system.DBPatientR\vrawPatients\x12C\n" +
@@ -2012,37 +2024,38 @@ var file_sistema_proto_depIdxs = []int32{
 	9,  // 2: clinical_system.EventQueryResponse.events:type_name -> clinical_system.DBClinicalEvent
 	3,  // 3: clinical_system.CohortQueryResponse.patients:type_name -> clinical_system.DBPatient
 	9,  // 4: clinical_system.CohortQueryResponse.relevant_events:type_name -> clinical_system.DBClinicalEvent
-	3,  // 5: clinical_system.TransformRequest.raw_patients:type_name -> clinical_system.DBPatient
-	6,  // 6: clinical_system.TransformRequest.raw_encounters:type_name -> clinical_system.DBEncounter
-	9,  // 7: clinical_system.TransformRequest.raw_events:type_name -> clinical_system.DBClinicalEvent
-	15, // 8: clinical_system.TransformResponse.patients:type_name -> clinical_system.FHIRPatient
-	16, // 9: clinical_system.TransformResponse.encounters:type_name -> clinical_system.FHIREncounter
-	17, // 10: clinical_system.TransformResponse.conditions:type_name -> clinical_system.FHIRCondition
-	18, // 11: clinical_system.TransformResponse.observations:type_name -> clinical_system.FHIRObservation
-	19, // 12: clinical_system.TransformResponse.medications:type_name -> clinical_system.FHIRMedicationRequest
-	22, // 13: clinical_system.StatisticsResponse.age_ranges:type_name -> clinical_system.AgeRangeDistribution
-	23, // 14: clinical_system.StatisticsResponse.departments:type_name -> clinical_system.DepartmentFrequency
-	24, // 15: clinical_system.StatisticsResponse.medications:type_name -> clinical_system.MedicationFrequency
-	25, // 16: clinical_system.StatisticsResponse.sample_exams:type_name -> clinical_system.AnonymizedExam
-	0,  // 17: clinical_system.AuthorizationService.AuthorizeQuery:input_type -> clinical_system.AuthRequest
-	2,  // 18: clinical_system.PatientDataService.FetchPatients:input_type -> clinical_system.PatientQueryRequest
-	5,  // 19: clinical_system.PatientDataService.FetchEncounters:input_type -> clinical_system.EncounterQueryRequest
-	8,  // 20: clinical_system.PatientDataService.FetchClinicalEvents:input_type -> clinical_system.EventQueryRequest
-	11, // 21: clinical_system.PatientDataService.FetchCohortData:input_type -> clinical_system.CohortQueryRequest
-	13, // 22: clinical_system.DataTransformService.TransformToFHIR:input_type -> clinical_system.TransformRequest
-	20, // 23: clinical_system.DataTransformService.GetCohortStatistics:input_type -> clinical_system.StatisticsRequest
-	1,  // 24: clinical_system.AuthorizationService.AuthorizeQuery:output_type -> clinical_system.AuthResponse
-	4,  // 25: clinical_system.PatientDataService.FetchPatients:output_type -> clinical_system.PatientQueryResponse
-	7,  // 26: clinical_system.PatientDataService.FetchEncounters:output_type -> clinical_system.EncounterQueryResponse
-	10, // 27: clinical_system.PatientDataService.FetchClinicalEvents:output_type -> clinical_system.EventQueryResponse
-	12, // 28: clinical_system.PatientDataService.FetchCohortData:output_type -> clinical_system.CohortQueryResponse
-	14, // 29: clinical_system.DataTransformService.TransformToFHIR:output_type -> clinical_system.TransformResponse
-	21, // 30: clinical_system.DataTransformService.GetCohortStatistics:output_type -> clinical_system.StatisticsResponse
-	24, // [24:31] is the sub-list for method output_type
-	17, // [17:24] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	6,  // 5: clinical_system.CohortQueryResponse.encounters:type_name -> clinical_system.DBEncounter
+	3,  // 6: clinical_system.TransformRequest.raw_patients:type_name -> clinical_system.DBPatient
+	6,  // 7: clinical_system.TransformRequest.raw_encounters:type_name -> clinical_system.DBEncounter
+	9,  // 8: clinical_system.TransformRequest.raw_events:type_name -> clinical_system.DBClinicalEvent
+	15, // 9: clinical_system.TransformResponse.patients:type_name -> clinical_system.FHIRPatient
+	16, // 10: clinical_system.TransformResponse.encounters:type_name -> clinical_system.FHIREncounter
+	17, // 11: clinical_system.TransformResponse.conditions:type_name -> clinical_system.FHIRCondition
+	18, // 12: clinical_system.TransformResponse.observations:type_name -> clinical_system.FHIRObservation
+	19, // 13: clinical_system.TransformResponse.medications:type_name -> clinical_system.FHIRMedicationRequest
+	22, // 14: clinical_system.StatisticsResponse.age_ranges:type_name -> clinical_system.AgeRangeDistribution
+	23, // 15: clinical_system.StatisticsResponse.departments:type_name -> clinical_system.DepartmentFrequency
+	24, // 16: clinical_system.StatisticsResponse.medications:type_name -> clinical_system.MedicationFrequency
+	25, // 17: clinical_system.StatisticsResponse.sample_exams:type_name -> clinical_system.AnonymizedExam
+	0,  // 18: clinical_system.AuthorizationService.AuthorizeQuery:input_type -> clinical_system.AuthRequest
+	2,  // 19: clinical_system.PatientDataService.FetchPatients:input_type -> clinical_system.PatientQueryRequest
+	5,  // 20: clinical_system.PatientDataService.FetchEncounters:input_type -> clinical_system.EncounterQueryRequest
+	8,  // 21: clinical_system.PatientDataService.FetchClinicalEvents:input_type -> clinical_system.EventQueryRequest
+	11, // 22: clinical_system.PatientDataService.FetchCohortData:input_type -> clinical_system.CohortQueryRequest
+	13, // 23: clinical_system.DataTransformService.TransformToFHIR:input_type -> clinical_system.TransformRequest
+	20, // 24: clinical_system.DataTransformService.GetCohortStatistics:input_type -> clinical_system.StatisticsRequest
+	1,  // 25: clinical_system.AuthorizationService.AuthorizeQuery:output_type -> clinical_system.AuthResponse
+	4,  // 26: clinical_system.PatientDataService.FetchPatients:output_type -> clinical_system.PatientQueryResponse
+	7,  // 27: clinical_system.PatientDataService.FetchEncounters:output_type -> clinical_system.EncounterQueryResponse
+	10, // 28: clinical_system.PatientDataService.FetchClinicalEvents:output_type -> clinical_system.EventQueryResponse
+	12, // 29: clinical_system.PatientDataService.FetchCohortData:output_type -> clinical_system.CohortQueryResponse
+	14, // 30: clinical_system.DataTransformService.TransformToFHIR:output_type -> clinical_system.TransformResponse
+	21, // 31: clinical_system.DataTransformService.GetCohortStatistics:output_type -> clinical_system.StatisticsResponse
+	25, // [25:32] is the sub-list for method output_type
+	18, // [18:25] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_sistema_proto_init() }

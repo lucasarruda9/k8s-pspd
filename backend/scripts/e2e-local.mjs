@@ -56,6 +56,10 @@ async function coorte(projectId) {
   console.log(`AUTH  -> ${a.status} / ${a.access_level}`);
   const s = await call(tr.GetCohortStatistics.bind(tr), { project_id: projectId });
   console.log(`STATS -> ${s.total_patients} paciente(s) | ${s.gender_distribution} | ${s.average_age}`);
+  const pct = (v) => (v ?? 0).toFixed(0);
+  console.log('  faixas etarias:', s.age_ranges.map((r) => `${r.range}: ${pct(r.percentage)}%`).join(', '));
+  console.log('  departamentos: ', s.departments.map((d) => `${d.department_name}: ${pct(d.percentage)}%`).join(', '));
+  console.log('  medicamentos:  ', s.medications.map((m) => `${m.medication_name} (${m.count ?? 0})`).join(', '));
 }
 
 async function main() {
