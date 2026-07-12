@@ -11,5 +11,5 @@ export default defineConfig(({ command }) => ({
     css: true,
     exclude: ['**/node_modules/**', '**/dist/**', '**/tests/e2e/**'],
   },
-  base: command === 'build' ? '/grupo4/' : '/',
+  base: command === 'build' ? '/grupo4' : '/',
 }))

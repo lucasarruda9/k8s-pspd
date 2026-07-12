@@ -25,8 +25,8 @@ function MockLoginForm() {
     try {
       await mockLogin(username.trim(), password.trim());
       navegar('/dashboard');
-      // força reload para o App.jsx re-inicializar com o usuário do localStorage
-      window.location.href = '/dashboard';
+      const base = import.meta.env.BASE_URL;
+      window.location.href = `${base}${base.endsWith('/') ? '' : '/'}dashboard`;
     } catch (err) {
       setErro(err.message || 'Erro ao realizar login mock.');
     } finally {
@@ -112,7 +112,8 @@ function KeycloakLoginForm() {
         await keycloakLogin(username.trim(), password.trim());
         span.setStatus({ code: 1 });
         navegar('/dashboard');
-        window.location.href = '/dashboard';
+        const base = import.meta.env.BASE_URL;
+        window.location.href = `${base}${base.endsWith('/') ? '' : '/'}dashboard`;
       } catch (err) {
         span.recordException(err);
         span.setStatus({ code: 2, message: err.message });
