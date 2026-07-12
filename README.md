@@ -1,6 +1,41 @@
 # Sistema de Monitoramento de Informações Clínicas (PSPD)
 
+**Universidade de Brasília — FCTE — Engenharia de Software** <br>
+**Disciplina: PSPD — Programação para Sistemas Paralelos e Distribuídos** <br>
+**Professor: Fernando W. Cruz**
+
 Projeto desenvolvido para a disciplina de Programação para Sistemas Paralelos e Distribuídos (PSPD). O foco deste projeto é construir uma aplicação conteinerizada baseada em microsserviços e operá-la em um cluster Kubernetes, garantindo observabilidade e monitoramento.
+
+
+### Grupo
+
+| Integrante | Matrícula | Foco de Trabalho |
+|---|---|---|
+| Artur Mendonça Arruda | 231033737 | Infraestrutura, Kubernetes, Monitoramento e Testes de Carga |
+| Ester Flores Lino da Silva | 202063201 | Microsserviços, Transformação FHIR e Validação Funcional |
+| João Pedro Costa | 190030801 | Frontend, Autenticação OIDC/Keycloak e Interfaces por Perfil |
+| Lucas Mendonça Arruda | 231035464 | API Gateway, Validação JWT, Roteamento e Integração gRPC |
+| Lucas Guimarães Borges | 222015159 | Modelagem SQL, Banco de Dados e Queries de Performance |
+
+
+## Sobre o projeto
+
+Este projeto é um sistema de monitoramento clínico com microsserviços integrados.
+
+- `frontend`: front-end React/Vite que faz login no Keycloak e consome o API Gateway.
+- `API Gateway`: camada HTTP no backend que recebe as requisições do frontend e encaminha para os serviços gRPC.
+- `Authorization`: serviço gRPC em js que valida acesso com base em vínculos de usuário, paciente e projetos.
+- `PatientData`: serviço gRPC em js que consulta dados de pacientes, atendimentos e eventos clínicos.
+- `DataTransform`: serviço gRPC em Go que transforma dados em formato FHIR e calcula estatísticas.
+- `db PatientData`: banco PostgreSQL com schema e seeds para pacientes, projetos, vínculos e consultas.
+
+## Pré-requisitos
+
+- `Docker` e `Docker Compose` para rodar o ambiente local.
+- `kubectl` para deploy em Kubernetes.
+- `kubeconfig` correto em `.kube/kubeconfig-grupo-4.yaml` para o cluster remoto.
+- `Node.js` e `npm` para rodar o frontend localmente.
+- `Keycloak` para autenticação OIDC do frontend.
 
 ## Estrutura do Projeto
 
@@ -95,8 +130,28 @@ npm install
 npm run dev
 ```
 
+## Validação Funcional
+
+Para garantir que o sistema atende aos requisitos de autenticação, anonimização e interoperabilidade (FHIR), documentamos todos os procedimentos, resultados e a matriz de conformidade no apêndice técnico do projeto.
+
+- [Acessar Apêndice: Roteiro de Validação Funcional](VALIDACAO_FUNCIONAL.md)
+
+## Testes de Performance e Estresse
+
+Para validar a escalabilidade e o comportamento do sistema sob alta demanda, utilizamos o k6 para simular cargas de trabalho.
+
+### Execução de Carga
+Você pode executar o teste de estresse via Docker apontando para o seu gateway (local ou remoto):
+
+```bash
+docker run --rm -i -e GATEWAY_URL="[http://kiriland.unb.br/grupo4/api](http://kiriland.unb.br/grupo4/api)" -v "${PWD}:/app" grafana/k6 run /app/load-tests/k6-stress-test.js
+```
+
+> Nota: A variável GATEWAY_URL deve ser ajustada conforme o ambiente alvo. O script simula múltiplos usuários simultâneos disparando requisições contra os serviços.
+
 | Versao | Descricao | Autor(es) | Data | Revisor(es) | Data de Revisao |
 |---|---|---|---|---|---|
 | 1.0 | Estrutura inicial do README | [João Pedro Cota](https://github.com/johnaopedro) | 10/07/2026 | [João Pedro Cota](https://github.com/johnaopedro) | 10/07/2026 |
 | 1.1 | Adiciona instrucoes de deploy Kubernetes | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 |
 | 1.2 | Refatora arquitetura para uso de OAUTH2 e Observabilidade centralizada | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 | [Artur Mendonca Arruda](https://github.com/ArtyMend07) | 10/07/2026 |
+| 1.3 | Adiciona seção de Validação funcional, Testes de performance e estresse, Execução de carga com k6 e organiza introdução | [Lucas Mendonca Arruda](https://github.com/lucasarruda9) | 12/07/2026 | [Lucas Mendonca Arruda](https://github.com/lucasarruda9) | 12/07/2026 |
