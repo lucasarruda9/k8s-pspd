@@ -2,47 +2,43 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-import keycloak, { initKeycloak, doLogout, isMockMode } from './services/keycloak';
+import { isMockMode } from './services/keycloak';
 import { getMockUser, mockLogout } from './services/mockAuth';
+import { getKeycloakUser, keycloakLogout } from './services/keycloakAuth';
 
 function App() {
+  const DASHBOARD_PATH = '/dashboard';
   //guarda os dados do usuario logado no momento
   const [usuarioLogado, setUsuarioLogado] = useState(null);
   const [inicializado, setInicializado] = useState(false);
   const navegar = useNavigate();
 
   useEffect(() => {
-    initKeycloak((autenticado) => {
-      if (autenticado) {
-        let dadosUsuario;
-        if (isMockMode) {
-          dadosUsuario = getMockUser();
-        } else {
-          // Extrai as informações do Token JWT
-          const tokenParsed = keycloak.tokenParsed;
-          dadosUsuario = {
-            username: tokenParsed.preferred_username,
-            role: tokenParsed.realm_access?.roles?.find(r =>
-              ['MEDICO', 'PESQUISADOR', 'ESTAGIARIO'].includes(r.toUpperCase())
-            )?.toUpperCase() || 'DESCONHECIDO'
-          };
-        }
-        setUsuarioLogado(dadosUsuario);
-        navegar('/dashboard');
+    if (isMockMode) {
+      const user = getMockUser();
+      if (user) {
+        setUsuarioLogado(user);
+        navegar(DASHBOARD_PATH);
       }
       setInicializado(true);
-    });
+    } else {
+      const user = getKeycloakUser();
+      if (user) {
+        setUsuarioLogado(user);
+        navegar(DASHBOARD_PATH);
+      }
+      setInicializado(true);
+    }
   }, [navegar]);
 
-  //funcao para limpar a sessao e redirecionar para o login
   const realizarLogout = () => {
     setUsuarioLogado(null);
     if (isMockMode) {
       mockLogout();
-      navegar('/login');
     } else {
-      doLogout();
+      keycloakLogout();
     }
+    navegar('/login');
   };
 
   if (!inicializado) {

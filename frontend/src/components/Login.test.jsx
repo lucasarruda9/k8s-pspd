@@ -1,12 +1,15 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import Login from './Login';
-import { doLogin } from '../services/keycloak';
 
-// Mock do serviço de login do Keycloak e da telemetria
+// Mock do serviço de autenticação Keycloak real
+vi.mock('../services/keycloakAuth', () => ({
+  keycloakLogin: vi.fn(),
+}));
+
 vi.mock('../services/keycloak', () => ({
-  doLogin: vi.fn(),
   isMockMode: false,
 }));
 
@@ -19,42 +22,51 @@ vi.mock('../services/telemetry', () => ({
         recordException: vi.fn(),
         end: vi.fn(),
       };
-      callback(span);
+      return callback(span);
     }
   })
 }));
 
+import { keycloakLogin } from '../services/keycloakAuth';
+
+const renderLogin = () => render(
+  <MemoryRouter>
+    <Login />
+  </MemoryRouter>
+);
+
 describe('Login Component', () => {
   it('deve renderizar o formulário de login corretamente', () => {
-    render(<Login />);
-    
+    renderLogin();
+
     expect(screen.getByText('Sistema Clínico')).toBeInTheDocument();
     expect(screen.getByText('Acesso restrito via provedor de identidade.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Entrar via Keycloak/i })).toBeInTheDocument();
+    expect(screen.getByLabelText('Usuário')).toBeInTheDocument();
+    expect(screen.getByLabelText('Senha')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Entrar/i })).toBeInTheDocument();
   });
 
-  it('deve chamar doLogin do Keycloak ao clicar no botão', () => {
-    render(<Login />);
-    
-    const botaoDeEntrar = screen.getByRole('button', { name: /Entrar via Keycloak/i });
+  it('deve chamar keycloakLogin ao submeter o formulário', async () => {
+    keycloakLogin.mockResolvedValueOnce({ username: 'med.cardoso', role: 'MEDICO' });
 
-    //simula o clique no botao
-    fireEvent.click(botaoDeEntrar);
+    renderLogin();
 
-    //verifica se a funcao de login do Keycloak foi chamada
-    expect(doLogin).toHaveBeenCalledTimes(1);
+    fireEvent.change(screen.getByLabelText('Usuário'), { target: { value: 'med.cardoso' } });
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'PseudoPEP2026!' } });
+    fireEvent.click(screen.getByRole('button', { name: /Entrar/i }));
+
+    await waitFor(() => expect(keycloakLogin).toHaveBeenCalledWith('med.cardoso', 'PseudoPEP2026!'));
   });
 
-  it('deve exibir mensagem de erro se doLogin falhar', async () => {
-    doLogin.mockImplementation(() => {
-      throw new Error('Erro forçado no login');
-    });
+  it('deve exibir mensagem de erro se keycloakLogin falhar', async () => {
+    keycloakLogin.mockRejectedValueOnce(new Error('Usuário ou senha inválidos.'));
 
-    render(<Login />);
-    
-    const botaoDeEntrar = screen.getByRole('button', { name: /Entrar via Keycloak/i });
-    fireEvent.click(botaoDeEntrar);
+    renderLogin();
 
-    expect(await screen.findByText('Falha ao redirecionar para o Keycloak')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Usuário'), { target: { value: 'errado' } });
+    fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'errada' } });
+    fireEvent.click(screen.getByRole('button', { name: /Entrar/i }));
+
+    expect(await screen.findByText('Usuário ou senha inválidos.')).toBeInTheDocument();
   });
 });

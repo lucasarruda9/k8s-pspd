@@ -9,7 +9,8 @@
   "scripts": {
     "start:auth": "node src/services/authorization/server.js",
     "start:patient": "node src/services/patientData/server.js",
-    "start:all": "node src/server.js",
+    "start:gateway": "node src/server.js",
+    "start:all": "node src/start-all.js",
     "test": "node --experimental-vm-modules node_modules/.bin/jest",
     "test:watch": "npm test -- --watch"
   },
