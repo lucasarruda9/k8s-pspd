@@ -51,7 +51,8 @@ export const queries = {
            p.city AS cidade, p.state AS estado, p.cpf, p.cns
     FROM clinical_events ce
     JOIN patients p ON ce.patient_id = p.patient_id
-    WHERE ce.event_type = 'CONDITION' AND ce.code = $1`,
+    WHERE ce.event_type = 'CONDITION' AND ce.code = $1
+    LIMIT 1000`,
 
   eventosDaCoorte: `
     SELECT ce.event_id AS id_evento, ce.patient_id AS id_paciente, ce.encounter_id AS id_atendimento, ce.event_type AS tipo_evento,
@@ -63,7 +64,8 @@ export const queries = {
           SELECT 1 FROM clinical_events cond
           WHERE cond.patient_id = ce.patient_id
             AND cond.event_type = 'CONDITION'
-            AND cond.code = $1)`,
+            AND cond.code = $1)
+    LIMIT 5000`,
 
   projetosDoPesquisador: `
     SELECT project_id AS id_projeto, title AS titulo, target_condition_code AS codigo_condicao, status, valid_until AS data_validade

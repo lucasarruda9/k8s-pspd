@@ -170,7 +170,7 @@ const VisaoDoPesquisador = ({ estatisticas, amostras }) => (
           {estatisticas.age_ranges?.map((item, idx) => (
             <li key={idx} style={listItemStyle}>
               <span>{item.range} anos</span>
-              <strong>{item.percentage}%</strong>
+              <strong>{Number(item.percentage).toFixed(1)}%</strong>
             </li>
           ))}
         </ul>
@@ -182,7 +182,7 @@ const VisaoDoPesquisador = ({ estatisticas, amostras }) => (
           {estatisticas.departments?.map((item, idx) => (
             <li key={idx} style={listItemStyle}>
               <span>{item.department_name}</span>
-              <strong>{item.percentage}%</strong>
+              <strong>{Number(item.percentage).toFixed(1)}%</strong>
             </li>
           ))}
         </ul>
@@ -241,8 +241,11 @@ export default function Dashboard({ usuario, aoDeslogar }) {
           const res = await api.get('/patients');
           setDadosDaVisao({ tipo: roleLower, pacientes: res.data });
         } else if (roleLower === 'pesquisador') {
-          const resEstat = await api.get('/patients/statistics/PRJ01');
-          await api.get('/patients/cohorts/PRJ01'); // Chamada mantida por compatibilidade
+          const projMe = await api.get('/patients/projects/me');
+          const projId = projMe.data.projectId;
+
+          const resEstat = await api.get(`/patients/statistics/${projId}`);
+          await api.get(`/patients/cohorts/${projId}`); // Chamada mantida por compatibilidade
           
           const examsList = resEstat.data?.sample_exams || resEstat.data?.sampleExams || [];
           setDadosDaVisao({ 

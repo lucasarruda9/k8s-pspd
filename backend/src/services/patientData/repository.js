@@ -67,7 +67,8 @@ const ATENDIMENTOS_DA_COORTE = `
     SELECT DISTINCT ce.patient_id
     FROM clinical_events ce
     WHERE ce.event_type = 'CONDITION' AND ce.code = $1
-  )`;
+  )
+  LIMIT 5000`;
 
 export async function findCohortData(projectId) {
   const projRows = await query(CONDICAO_DO_PROJETO, [projectId]);

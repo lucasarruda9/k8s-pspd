@@ -131,13 +131,18 @@ function buildFHIRResponse(req) {
   return { patients, encounters: [], conditions: [], observations: [], medications: [] };
 }
 
+import { authDecisions } from '../shared/metrics.js';
+
 export const mockGrpcClient = {
-  AuthorizeQuery: async ({ token_jwt, query_type }) => ({
-    status: 'ALLOW',
-    access_level: 'FULL',
-    username: 'mock-user',
-    role: 'MEDICO',
-  }),
+  AuthorizeQuery: async ({ token_jwt, query_type }) => {
+    authDecisions.inc({ decision: 'ALLOW', role: 'MEDICO', access_level: 'FULL' });
+    return {
+      status: 'ALLOW',
+      access_level: 'FULL',
+      username: 'mock-user',
+      role: 'MEDICO',
+    };
+  },
 
   FetchPatients: async ({ role }) => ({
     patients: formatPatientsForRole(role),

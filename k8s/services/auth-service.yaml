@@ -37,6 +37,28 @@ spec:
               value: "8081"
             - name: AUTH_METRICS_PORT
               value: "9101"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: pspd-secrets
+                  key: postgres-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pspd-secrets
+                  key: postgres-password
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: pspd-secrets
+                  key: postgres-db
+            - name: POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: pspd-secrets
+                  key: postgres-host
+            - name: POSTGRES_PORT
+              value: "5432"
           resources:
             requests:
               cpu: "100m"
