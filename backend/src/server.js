@@ -145,6 +145,12 @@ await fastify.register(swaggerUi, {
   uiConfig: { docExpansion: 'list' }
 });
 
+import { register } from './shared/metrics.js';
+fastify.get('/metrics', async (req, reply) => {
+  reply.header('Content-Type', register.contentType);
+  return await register.metrics();
+});
+
 
 await fastify.register(authRoutes, { prefix: '/api/auth' });
 await fastify.register(patientRoutes, { prefix: '/api/patients' });
